@@ -1,0 +1,831 @@
+{
+  "width": 48,
+  "height": 32,
+  "tileSize": 32,
+  "spawn": {
+    "x": 20,
+    "y": 8
+  },
+  "ground": [
+    "..........f..........ff........f.f........t..f.f",
+    "......f.........t.......f..f......ff.f...f..t.f.",
+    "...........f...ff.....f......tft.........t..f..t",
+    "CCCCCCCCC--CCCCCCCCCCCCCCCCCCCCCCCC--CCCCCCCCCCC",
+    "CCCCCCCCC--CCCCCCCCCCCCCCCCCCCCCCCC--CCCCCCCCCCC",
+    "CCCCCCCCC--CCCCCCCCCCCCCCCCCCCCCCCC--CCCCCCCCCCC",
+    ".....f...--.....................f..--....f..t.f.",
+    "....-------........................--.....t..f.t",
+    ".......ff--------------------------------.......",
+    "...................-....s~~~~~s.....-...-.f..t.f",
+    "...................-...s~~~~~~~ss...-...-t..f..t",
+    "..ff...............-..s~~~~~~~~~~s..-...-......f",
+    "...f...............-.s~~~~~~~~~~~~s.-...-.....t.",
+    "..tt...............-..ss~~~~~~~~~~..-...-......f",
+    "..t................-....s~~~~~~~~~..-...-.......",
+    "...................-...s.ssssf.~~~s.-...----t..f",
+    "....ddddddddddddd..-.fsssssssss.s~~.-....f.t..f.",
+    "....ddddddddddddd..-.........f.--~~--....t.f...t",
+    ".t...ccccccccccc-..-...f.f........~~....t.f.t...",
+    ".tt..wwwwwwwwww------......f..tt..~~.....t.f..f.",
+    "..t..wwwwwwwwwww...-........f.t.t.~~.....f..t.f.",
+    ".....ccccccccccc...-t.......ttt.t..~~t...t.f...t",
+    ".......f...........-......t....f...~~....f..t.f.",
+    "...f........t......-........f.....t~~.....t..f.t",
+    "..................t-.......f.......~~....f..t.f.",
+    "...t....f.....t....-......f....t...~~.....f..t..",
+    "CCCCCCCC..t...t....-...t....t...t..~~...t...t...",
+    "sssssssssssssssssssssssssssssssssssBBsssssssssss",
+    "sssssssssssssssssssssssssssssssssss~~sssssssssss",
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  ],
+  "objects": [
+    {
+      "type": "cottage",
+      "x": 1,
+      "y": 6,
+      "width": 4,
+      "height": 4,
+      "message": "Your cottage. Smoke curls from the chimney, and the kettle hums inside."
+    },
+    {
+      "type": "sign",
+      "x": 21,
+      "y": 7,
+      "message": "The south road drops to Sunroot Farm and on to the Saltgrass shore; east, the lane runs past the barn to the campfire hollow."
+    },
+    {
+      "type": "lamp",
+      "x": 13,
+      "y": 7
+    },
+    {
+      "type": "lamp",
+      "x": 27,
+      "y": 7
+    },
+    {
+      "type": "lamp",
+      "x": 24,
+      "y": 16,
+      "message": "A little lantern keeps watch over the sandy beach."
+    },
+    {
+      "type": "lamp",
+      "x": 17,
+      "y": 18,
+      "message": "The lamp by the farm gate throws a warm little circle of light."
+    },
+    {
+      "type": "campfire",
+      "x": 32,
+      "y": 19,
+      "message": "The campfire crackles. Two acorn cups sit waiting by the flames."
+    },
+    {
+      "type": "barn",
+      "x": 41,
+      "y": 11,
+      "width": 5,
+      "height": 4,
+      "message": "The red barn smells of hay and warm timber. Swallows nest in the rafters."
+    },
+    {
+      "type": "scarecrow",
+      "x": 10,
+      "y": 17,
+      "message": "The scarecrow keeps a patched-eye watch over the rows, straw hat tilted against the wind."
+    },
+    {
+      "type": "haybale",
+      "x": 46,
+      "y": 15,
+      "message": "A spare hay bale waits by the barn door."
+    },
+    {
+      "type": "haybale",
+      "x": 18,
+      "y": 17,
+      "message": "A hay bale, sun-warm and slightly itchy."
+    },
+    {
+      "type": "trough",
+      "x": 21,
+      "y": 18,
+      "message": "The water trough ripples; a feather drifts on the surface."
+    },
+    {
+      "type": "gate",
+      "x": 16,
+      "y": 19,
+      "message": "The farm gate swings on oiled hinges, half open for chickens."
+    },
+    {
+      "type": "chicken",
+      "x": 17,
+      "y": 16,
+      "message": "A speckled hen pecks at the grass, pretending not to see you."
+    },
+    {
+      "type": "chicken",
+      "x": 18,
+      "y": 16
+    },
+    {
+      "type": "chicken",
+      "x": 17,
+      "y": 17
+    },
+    {
+      "type": "crop",
+      "x": 7,
+      "y": 18,
+      "message": "Green sprouts push through the tilled soil in neat little rows."
+    },
+    {
+      "type": "crop",
+      "x": 13,
+      "y": 20,
+      "message": "Golden wheat nods in the breeze, nearly ready for the sickle."
+    },
+    {
+      "type": "fence",
+      "x": 4,
+      "y": 16,
+      "width": 13,
+      "height": 1
+    },
+    {
+      "type": "fence",
+      "x": 4,
+      "y": 22,
+      "width": 13,
+      "height": 1
+    },
+    {
+      "type": "fence",
+      "x": 4,
+      "y": 17,
+      "width": 1,
+      "height": 5
+    },
+    {
+      "type": "fence",
+      "x": 16,
+      "y": 17,
+      "width": 1,
+      "height": 2
+    },
+    {
+      "type": "fence",
+      "x": 16,
+      "y": 20,
+      "width": 1,
+      "height": 2
+    },
+    {
+      "type": "pine",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "type": "pine",
+      "x": 39,
+      "y": 0
+    },
+    {
+      "type": "pine",
+      "x": 0,
+      "y": 1
+    },
+    {
+      "type": "pine",
+      "x": 39,
+      "y": 1
+    },
+    {
+      "type": "pine",
+      "x": 0,
+      "y": 6
+    },
+    {
+      "type": "pine",
+      "x": 0,
+      "y": 9
+    },
+    {
+      "type": "pine",
+      "x": 0,
+      "y": 12
+    },
+    {
+      "type": "pine",
+      "x": 0,
+      "y": 15
+    },
+    {
+      "type": "pine",
+      "x": 0,
+      "y": 18
+    },
+    {
+      "type": "pine",
+      "x": 0,
+      "y": 21
+    },
+    {
+      "type": "pine",
+      "x": 0,
+      "y": 24
+    },
+    {
+      "type": "pine",
+      "x": 39,
+      "y": 6
+    },
+    {
+      "type": "pine",
+      "x": 39,
+      "y": 9
+    },
+    {
+      "type": "pine",
+      "x": 39,
+      "y": 12
+    },
+    {
+      "type": "pine",
+      "x": 39,
+      "y": 15
+    },
+    {
+      "type": "pine",
+      "x": 39,
+      "y": 18
+    },
+    {
+      "type": "pine",
+      "x": 39,
+      "y": 21
+    },
+    {
+      "type": "pine",
+      "x": 39,
+      "y": 24
+    },
+    {
+      "type": "pine",
+      "x": 1,
+      "y": 7
+    },
+    {
+      "type": "pine",
+      "x": 1,
+      "y": 10
+    },
+    {
+      "type": "pine",
+      "x": 1,
+      "y": 13
+    },
+    {
+      "type": "pine",
+      "x": 1,
+      "y": 16
+    },
+    {
+      "type": "pine",
+      "x": 1,
+      "y": 19
+    },
+    {
+      "type": "pine",
+      "x": 1,
+      "y": 22
+    },
+    {
+      "type": "pine",
+      "x": 38,
+      "y": 7
+    },
+    {
+      "type": "pine",
+      "x": 38,
+      "y": 10
+    },
+    {
+      "type": "pine",
+      "x": 38,
+      "y": 13
+    },
+    {
+      "type": "pine",
+      "x": 38,
+      "y": 16
+    },
+    {
+      "type": "pine",
+      "x": 38,
+      "y": 19
+    },
+    {
+      "type": "pine",
+      "x": 38,
+      "y": 22
+    },
+    {
+      "type": "pine",
+      "x": 2,
+      "y": 2
+    },
+    {
+      "type": "pine",
+      "x": 7,
+      "y": 2
+    },
+    {
+      "type": "pine",
+      "x": 25,
+      "y": 2
+    },
+    {
+      "type": "pine",
+      "x": 33,
+      "y": 2
+    },
+    {
+      "type": "pine",
+      "x": 15,
+      "y": 7
+    },
+    {
+      "type": "pine",
+      "x": 24,
+      "y": 7
+    },
+    {
+      "type": "pine",
+      "x": 33,
+      "y": 7
+    },
+    {
+      "type": "pine",
+      "x": 22,
+      "y": 17
+    },
+    {
+      "type": "pine",
+      "x": 26,
+      "y": 18
+    },
+    {
+      "type": "pine",
+      "x": 28,
+      "y": 18
+    },
+    {
+      "type": "pine",
+      "x": 30,
+      "y": 21
+    },
+    {
+      "type": "pine",
+      "x": 37,
+      "y": 18
+    },
+    {
+      "type": "pine",
+      "x": 38,
+      "y": 21
+    },
+    {
+      "type": "pine",
+      "x": 6,
+      "y": 24
+    },
+    {
+      "type": "pine",
+      "x": 11,
+      "y": 24
+    },
+    {
+      "type": "pine",
+      "x": 21,
+      "y": 24
+    },
+    {
+      "type": "pine",
+      "x": 23,
+      "y": 24
+    },
+    {
+      "type": "pine",
+      "x": 27,
+      "y": 24
+    },
+    {
+      "type": "pine",
+      "x": 31,
+      "y": 24
+    },
+    {
+      "type": "pine",
+      "x": 33,
+      "y": 24
+    },
+    {
+      "type": "pine",
+      "x": 21,
+      "y": 21
+    },
+    {
+      "type": "pine",
+      "x": 25,
+      "y": 21
+    },
+    {
+      "type": "pine",
+      "x": 31,
+      "y": 21
+    },
+    {
+      "type": "pine",
+      "x": 33,
+      "y": 22
+    },
+    {
+      "type": "bush",
+      "x": 14,
+      "y": 6
+    },
+    {
+      "type": "bush",
+      "x": 31,
+      "y": 6
+    },
+    {
+      "type": "bush",
+      "x": 6,
+      "y": 10
+    },
+    {
+      "type": "bush",
+      "x": 37,
+      "y": 10
+    },
+    {
+      "type": "bush",
+      "x": 2,
+      "y": 22
+    },
+    {
+      "type": "bush",
+      "x": 26,
+      "y": 6
+    },
+    {
+      "type": "bush",
+      "x": 34,
+      "y": 7
+    },
+    {
+      "type": "rock",
+      "x": 3,
+      "y": 10
+    },
+    {
+      "type": "rock",
+      "x": 37,
+      "y": 14
+    },
+    {
+      "type": "rock",
+      "x": 22,
+      "y": 10
+    },
+    {
+      "type": "rock",
+      "x": 28,
+      "y": 15
+    },
+    {
+      "type": "koi",
+      "x": 26,
+      "y": 11,
+      "message": "A koi loops lazily beneath the surface."
+    },
+    {
+      "type": "koi",
+      "x": 28,
+      "y": 12
+    },
+    {
+      "type": "koi",
+      "x": 30,
+      "y": 10
+    },
+    {
+      "type": "bass",
+      "x": 25,
+      "y": 13
+    },
+    {
+      "type": "bass",
+      "x": 31,
+      "y": 11
+    },
+    {
+      "type": "bass",
+      "x": 32,
+      "y": 14,
+      "message": "A bass hides in the cool shadow of the inlet."
+    },
+    {
+      "type": "butterfly",
+      "x": 17,
+      "y": 1
+    },
+    {
+      "type": "butterfly",
+      "x": 23,
+      "y": 0
+    },
+    {
+      "type": "butterfly",
+      "x": 36,
+      "y": 2
+    },
+    {
+      "type": "lily",
+      "x": 27,
+      "y": 10,
+      "message": "A lily pad bobs, and a koi loops lazily beneath it."
+    },
+    {
+      "type": "lily",
+      "x": 26,
+      "y": 13
+    },
+    {
+      "type": "lily",
+      "x": 27,
+      "y": 14
+    },
+    {
+      "type": "pine",
+      "x": 6,
+      "y": 23
+    },
+    {
+      "type": "pine",
+      "x": 22,
+      "y": 23
+    },
+    {
+      "type": "pine",
+      "x": 38,
+      "y": 23
+    },
+    {
+      "type": "dragonfly",
+      "x": 24,
+      "y": 17,
+      "message": "A dragonfly skims low over the pond bank, wings rattling."
+    },
+    {
+      "type": "dragonfly",
+      "x": 32,
+      "y": 16,
+      "message": "A dragonfly hangs above the warm sand at the water's edge."
+    },
+    {
+      "type": "sparrow",
+      "x": 14,
+      "y": 1,
+      "message": "A sparrow hops through the grass, cocking its head at you."
+    },
+    {
+      "type": "sparrow",
+      "x": 31,
+      "y": 2,
+      "message": "A sparrow dust-bathes in the dry grass, chirring happily."
+    },
+    {
+      "type": "robin",
+      "x": 44,
+      "y": 12,
+      "message": "A robin perches by the barn, quick and bright-breasted."
+    },
+    {
+      "type": "robin",
+      "x": 38,
+      "y": 25,
+      "message": "A robin hunts worms in the soft meadow grass."
+    },
+    {
+      "type": "bass",
+      "x": 24,
+      "y": 30,
+      "message": "A bass hangs in the green sea light, unhurried."
+    },
+    {
+      "type": "bass",
+      "x": 38,
+      "y": 29,
+      "message": "A bass cruises the shallows where the river meets the sea."
+    },
+    {
+      "type": "minnow",
+      "x": 30,
+      "y": 30,
+      "message": "Minnows dart in a silver ribbon through the shallows."
+    },
+    {
+      "type": "minnow",
+      "x": 34,
+      "y": 29,
+      "message": "A minnow swims lazy circles by the river mouth."
+    },
+    {
+      "type": "oak",
+      "x": 10,
+      "y": 1
+    },
+    {
+      "type": "oak",
+      "x": 30,
+      "y": 1
+    },
+    {
+      "type": "oak",
+      "x": 37,
+      "y": 6
+    },
+    {
+      "type": "willow",
+      "x": 21,
+      "y": 13
+    },
+    {
+      "type": "willow",
+      "x": 34,
+      "y": 12
+    },
+    {
+      "type": "pine",
+      "x": 44,
+      "y": 13
+    },
+    {
+      "type": "pine",
+      "x": 46,
+      "y": 14
+    },
+    {
+      "type": "oak",
+      "x": 45,
+      "y": 15
+    },
+    {
+      "type": "pine",
+      "x": 45,
+      "y": 17
+    },
+    {
+      "type": "pine",
+      "x": 47,
+      "y": 18
+    },
+    {
+      "type": "pine",
+      "x": 44,
+      "y": 19
+    },
+    {
+      "type": "oak",
+      "x": 47,
+      "y": 20
+    },
+    {
+      "type": "pine",
+      "x": 46,
+      "y": 21
+    },
+    {
+      "type": "pine",
+      "x": 46,
+      "y": 0
+    },
+    {
+      "type": "pine",
+      "x": 47,
+      "y": 1
+    },
+    {
+      "type": "pine",
+      "x": 46,
+      "y": 2
+    },
+    {
+      "type": "pine",
+      "x": 47,
+      "y": 6
+    },
+    {
+      "type": "pine",
+      "x": 46,
+      "y": 10
+    },
+    {
+      "type": "pine",
+      "x": 47,
+      "y": 14
+    },
+    {
+      "type": "pine",
+      "x": 46,
+      "y": 18
+    },
+    {
+      "type": "pine",
+      "x": 47,
+      "y": 22
+    },
+    {
+      "type": "gull",
+      "x": 28,
+      "y": 26,
+      "message": "A gull rides the wind off the water."
+    },
+    {
+      "type": "gull",
+      "x": 41,
+      "y": 26
+    },
+    {
+      "type": "driftwood",
+      "x": 12,
+      "y": 27
+    },
+    {
+      "type": "driftwood",
+      "x": 34,
+      "y": 28
+    },
+    {
+      "type": "rowboat",
+      "x": 45,
+      "y": 28
+    },
+    {
+      "type": "crate",
+      "x": 23,
+      "y": 27
+    }
+  ],
+  "landmarks": [
+    {
+      "id": "cottage",
+      "x": 5,
+      "y": 7,
+      "label": "Cottage Clearing"
+    },
+    {
+      "id": "pass",
+      "x": 10,
+      "y": 2,
+      "label": "Cliffside Pass"
+    },
+    {
+      "id": "meadow",
+      "x": 20,
+      "y": 1,
+      "label": "Sunlit Meadow"
+    },
+    {
+      "id": "pond",
+      "x": 26,
+      "y": 15,
+      "label": "Willow Pond"
+    },
+    {
+      "id": "farm",
+      "x": 18,
+      "y": 19,
+      "label": "Sunroot Farm"
+    },
+    {
+      "id": "campfire",
+      "x": 31,
+      "y": 19,
+      "label": "Campfire Hollow"
+    },
+    {
+      "id": "beach",
+      "x": 19,
+      "y": 27,
+      "label": "Saltgrass Shore"
+    }
+  ]
+}
