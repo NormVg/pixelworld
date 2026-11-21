@@ -1,0 +1,21 @@
+{
+  "name": "pixelworld",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "test": "node --test test/*.test.mjs",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@pinia/nuxt": "1.0.3",
+    "@thenormvg/web-have-sounds": "^1.6.3",
+    "nuxt": "^4.6.4",
+    "pinia": "^4.1.0",
+    "vue": "^3.5.45",
+    "vue-router": "^5.4.0"
+  }
+}

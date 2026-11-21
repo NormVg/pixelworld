@@ -8,8 +8,8 @@
  * in; this module is pure math with no imports at all, so it is SSR-safe and
  * trivially testable.
  *
- * Tempos are deliberately different per schedule — a flickering 640ms
- * campfire cycle next to an 8.4s pine sway — so nothing in the world moves in
+ * Tempos are deliberately different per schedule — a slow ~1.4s campfire
+ * flicker next to a 14s pine sway — so nothing in the world moves in
  * lockstep. To keep two instances of one schedule apart, stagger the time you
  * pass (the renderer already does this with its per-prop phase) or spread the
  * schedule with a `phaseOffset`.
@@ -40,56 +40,60 @@ export type WorldAnimationId =
   | 'tallGrass'
   | 'playerWalk'
 
-/** Water shimmer: six frames at 420ms, a slow glassy loop of 2.52s. */
+/**
+ * Water shimmer: sixteen frames at 900ms — a slow glassy drift whose full
+ * cycle takes 14.4s. Neighbouring tiles hold different phases, so the pond
+ * never pulses as one sheet and the cycle is too slow to read as a loop.
+ */
 export const waterAnimation: AnimationFrameSchedule = {
   id: 'water',
-  frameCount: 6,
-  frameMs: 420,
+  frameCount: 16,
+  frameMs: 900,
 }
 
-/** Fish swim cycle: four frames at 230ms, one continuous 920ms tail sweep. */
+/** Fish swim cycle: four frames at 300ms, one continuous 1.2s tail sweep. */
 export const fishAnimation: AnimationFrameSchedule = {
   id: 'fish',
   frameCount: 4,
-  frameMs: 230,
+  frameMs: 300,
 }
 
-/** Butterfly wing beat: four frames at 260ms, folding and unfolding (1.56s). */
+/** Butterfly wing beat: four frames at 320ms, folding and unfolding (1.92s). */
 export const butterflyAnimation: AnimationFrameSchedule = {
   id: 'butterfly',
   frameCount: 4,
-  frameMs: 260,
+  frameMs: 320,
   pingPong: true,
 }
 
-/** Campfire flicker: four frames at 160ms — the fastest cycle in the world. */
+/** Campfire flicker: four frames at 200ms — the fastest cycle in the world. */
 export const campfireAnimation: AnimationFrameSchedule = {
   id: 'campfire',
   frameCount: 4,
-  frameMs: 160,
+  frameMs: 200,
 }
 
-/** Lamp glow breathing: four frames at 950ms, swelling and receding (5.7s). */
+/** Lamp glow breathing: four frames at 1200ms, swelling and receding (7.2s). */
 export const lampGlowAnimation: AnimationFrameSchedule = {
   id: 'lampGlow',
   frameCount: 4,
-  frameMs: 950,
+  frameMs: 1200,
   pingPong: true,
 }
 
-/** Pine sway in the wind: four frames at 1400ms, a full lean-and-return in 8.4s. */
+/** Pine sway in the wind: four frames at 1800ms, a full lean-and-return in 10.8s. */
 export const pineSwayAnimation: AnimationFrameSchedule = {
   id: 'pineSway',
   frameCount: 4,
-  frameMs: 1400,
+  frameMs: 1800,
   pingPong: true,
 }
 
-/** Tall grass rustle: four frames at 850ms, softer and quicker than the pines. */
+/** Tall grass rustle: four frames at 2200ms, a soft out-and-back in 13.2s. */
 export const tallGrassAnimation: AnimationFrameSchedule = {
   id: 'tallGrass',
   frameCount: 4,
-  frameMs: 850,
+  frameMs: 2200,
   pingPong: true,
 }
 

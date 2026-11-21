@@ -1,0 +1,215 @@
+/*
+  Pixelworld - design tokens and the full-screen game shell.
+
+  Mood: an old handheld title running edge to edge. The world covers
+  the whole viewport - never letterboxed, never framed - and the only
+  chrome over it is a small solid location sign: square corners, a
+  hard ink outline, a 1px light bevel, parchment and amber lantern
+  light. No blur, no soft shadows, no rounded cards, and no controls
+  on the screen; the world is the whole game.
+*/
+
+:root {
+  /* Deep forest - night, frames, controller keys */
+  --pw-forest-950: #101a13;
+  --pw-forest-900: #16211a;
+  --pw-forest-800: #1d2b22;
+  --pw-forest-700: #263a2c;
+  --pw-forest-600: #314736;
+
+  /* Warm parchment - panels and paper */
+  --pw-parchment-100: #f8eed9;
+  --pw-parchment-200: #f1e2c4;
+  --pw-parchment-300: #e5d0a8;
+  --pw-parchment-400: #d9c08e;
+
+  /* Soft amber - lantern light */
+  --pw-amber-300: #e4bd96;
+  --pw-amber-400: #d7a984;
+  --pw-amber-500: #c9905e;
+  --pw-amber-600: #ab7444;
+
+  /* Sage - cool moss accents */
+  --pw-sage-300: #b7cfa4;
+  --pw-sage-400: #96b486;
+  --pw-sage-500: #78985f;
+
+  /* Ink and cream - text */
+  --pw-ink-900: #2c2416;
+  --pw-ink-700: #55482e;
+  --pw-cream-100: #fbf4e4;
+  --pw-cream-300: #e8ddc2;
+
+  /* Semantic */
+  --pw-bg: var(--pw-forest-900);
+  --pw-text: var(--pw-parchment-100);
+  --pw-text-muted: var(--pw-parchment-300);
+  --pw-ink: var(--pw-ink-900);
+
+  /* Motion */
+  --pw-ease-out: cubic-bezier(0.22, 0.9, 0.32, 1);
+  --pw-ease-soft: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+
+  /* Type */
+  --pw-font-body: "Avenir Next", "Segoe UI", "Trebuchet MS", ui-sans-serif, system-ui, sans-serif;
+  --pw-font-mono: "SF Mono", ui-monospace, "Cascadia Mono", "Menlo", "Consolas", monospace;
+}
+
+/* ---------- Base ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* The game owns the whole viewport; there is nothing to scroll. */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  font-family: var(--pw-font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--pw-text);
+  background-color: var(--pw-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--pw-amber-400);
+  color: var(--pw-ink-900);
+}
+
+:focus-visible {
+  outline: 3px solid var(--pw-amber-300);
+  outline-offset: 3px;
+}
+
+/* ---------- Pixel frame utility ----------
+   A real hard border plus a 1px inner bevel: the classic game box.
+   Square corners only. Override --pw-frame-color, --pw-frame-size
+   and --pw-frame-inner per component. */
+
+.pw-frame {
+  --pw-frame-color: var(--pw-ink-900);
+  --pw-frame-size: 2px;
+  --pw-frame-inner: rgba(255, 252, 240, 0.55);
+  border: var(--pw-frame-size) solid var(--pw-frame-color);
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px var(--pw-frame-inner);
+}
+
+/* ---------- Full-screen game shell ----------
+   One fixed room, edge to edge. The world wrapper is the whole
+   viewport and the canvas scales to cover it - crop, never
+   stretch, never letterbox. The HUD sits on top as solid game UI. */
+
+.pw-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  background: var(--pw-forest-950);
+}
+
+.pw-screen__stage {
+  position: absolute;
+  inset: 0;
+  animation: pw-fade 0.4s var(--pw-ease-out) both;
+}
+
+/* The wrapper fills 100vw x 100dvh and is a size container, so the
+   cover rule below can read its exact live dimensions. */
+.pw-screen__world {
+  /* GBA 3:2 until the page sets --pw-world-ratio from the live canvas. */
+  --pw-world-ratio: 1.5;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  container-type: size;
+}
+
+/* Cover, not contain: the world is as wide as the viewport, or as
+   wide as a full-viewport-height box of its aspect ratio requires -
+   whichever is larger. The grid centers the oversized canvas and
+   the wrapper crops it, so pixels stay square and the view stays
+   centered on the player. The extra class in the selector outranks
+   the component's own `width: 100%` on purpose; the three width
+   lines step up from the vh fallback to the exact container unit. */
+.pw-screen .pw-screen__world > .pixel-world {
+  width: max(100%, calc(100vh * var(--pw-world-ratio)));
+  width: max(100%, calc(100dvh * var(--pw-world-ratio)));
+  width: max(100%, calc(100cqh * var(--pw-world-ratio)));
+}
+
+/* Safety net: the renderer already sets this, but the shell insists. */
+.pw-screen__world canvas {
+  image-rendering: pixelated;
+}
+
+/* ---------- A whisper of night at the very edges. The renderer
+   already paints its own gentle vignette, so this stays almost
+   nothing - just enough to seat the corner HUD. ---------- */
+
+.pw-screen__fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent 74%,
+    rgba(9, 14, 11, 0.24) 100%
+  );
+}
+
+/* ---------- Game HUD ----------
+   No visible chrome over the world at all; this layer only carries
+   the invisible screen-reader region. Everything else is the world. */
+
+.pw-screen__hud {
+  --pw-hud-inset: clamp(0.85rem, 1rem + 1.5vmin, 1.6rem);
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  /* Chrome is never a target: every press passes through to the world. */
+  pointer-events: none;
+}
+
+/* What the forest says, for screen readers alone. */
+.pw-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ---------- Motion ---------- */
+
+@keyframes pw-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .pw-screen__stage {
+    animation: none;
+  }
+}
