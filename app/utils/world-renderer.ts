@@ -1,4 +1,5 @@
 import { playerSprites, propSprites, terrainSprites } from '~/utils/pixel-sprite-bank'
+import { catSprites } from '~/utils/pixel-sprite-cat'
 import { worldMap } from '~/utils/world-map'
 import { WORLD_ANIMATION_SCHEDULES, frameAt } from '~/utils/world-animation'
 import type { AnimationFrameSchedule } from '~/utils/world-animation'
@@ -35,6 +36,23 @@ export interface RenderPlayerState {
   moving: boolean
 }
 
+/** The cat companion's state for one frame. Positions are in world pixels; x/y mark her feet. */
+export interface RenderCompanionState {
+  x: number
+  y: number
+  /** True while she is walking or running. */
+  moving: boolean
+  /** True while she is in the faster catch-up run. */
+  running: boolean
+  /** True while she is holding the sit pose. */
+  sitting: boolean
+  /** True while she is holding the alert/stare pose. */
+  staring: boolean
+  /** Pose frame index, chosen by the gameplay layer. */
+  frame: number
+  direction: PlayerDirection
+}
+
 /** Everything the renderer needs to draw one frame. */
 export interface RenderState {
   player: RenderPlayerState
@@ -42,6 +60,8 @@ export interface RenderState {
   camera: { x: number; y: number }
   /** Id of the landmark the player currently stands on, or null away from one. */
   activeLandmarkId: string | null
+  /** Optional cat companion; absent or null renders nothing. */
+  companion?: RenderCompanionState | null
 }
 
 export interface WorldRendererOptions {
@@ -104,7 +124,7 @@ interface DynamicItem {
   draw: () => void
 }
 
-/** A waypoint on a pond's swim ring, in world pixels. */
+/** A waypoint on a looping path (a pond ring or a flyer route), in world pixels. */
 interface PondWaypoint {
   x: number
   y: number
@@ -126,27 +146,23 @@ interface FishMotion {
   phase: number
 }
 
-/** A bug wandering on a lazy two-frequency loop, boxed inside its anchor tile. */
+/** A flyer following a long eased waypoint loop across the whole map. */
 interface ButterflyMotion {
   key: string
   sprite: RasterSprite
-  ax: number
-  ay: number
+  /** Tile-centre waypoints spread across the map, in world pixels. */
+  path: readonly PondWaypoint[]
+  /** Milliseconds for one full lap of the waypoint loop. */
+  loopMs: number
+  /** Per-flyer loop phase in [0, 1). */
+  phase: number
+  /** Gentle wander overlay on the waypoint position, a few pixels. */
   ampX: number
   ampY: number
   /** Radians per millisecond; the two axes are deliberately incommensurate. */
   freqX: number
   freqY: number
-  phase: number
   phase2: number
-  /**
-   * Wander box clamped to the anchor tile, so a bug can never drift onto
-   * water, a path, or a neighbor's ground - it stays with its plant.
-   */
-  minX: number
-  maxX: number
-  minY: number
-  maxY: number
 }
 
 type GroundKind =
@@ -177,18 +193,26 @@ const DEFAULT_TILE_SIZE = 32
 const DEFAULT_FRAME_MS = 240
 
 /**
- * ¾-view presentation tilt. Render space compresses each world row slightly
- * and shears it a hair to the right going down, so the ground plane reads as
- * receding. Gameplay stays in flat world space; only this transform tilts.
+ * The world is drawn axis-aligned: one world pixel maps to one screen pixel
+ * on both axes. These were once a 3/4-view shear and row compression; the
+ * user reads that as a tilted rhombus, so both are neutral now. Keeping the
+ * names lets the projection helpers and edge-bleed math stay unchanged.
  */
-const ROW_COMPRESS = 0.95
-const SHEAR_PX_PER_TILE = 1
+const ROW_COMPRESS = 1
+const SHEAR_PX_PER_TILE = 0
+
+/** How far the water wheel sinks below its tile-bottom anchor, in world px. */
+const WATER_WHEEL_SINK_PX = 14
 
 /** Character the map uses for water; also the pond fish live in. */
 const WATER_CHAR = '~'
 const CLIFF_CHAR = 'C'
 /** River tile the bridge deck crosses: water wearing a timber deck. */
 const BRIDGE_CHAR = 'B'
+/** Stone dam tile: water wearing a walkable crest and a downstream spill. */
+const DAM_CHAR = 'D'
+/** Stone arch bridge tile: water wearing a rising deck. */
+const ARCH_CHAR = 'A'
 
 /** Map character -> ground treatment. Unknown characters fall back to `flat`. */
 const CHAR_KINDS: Readonly<Record<string, GroundKind>> = {
@@ -197,6 +221,8 @@ const CHAR_KINDS: Readonly<Record<string, GroundKind>> = {
   s: 'sand',
   '~': 'water',
   B: 'water',
+  D: 'water',
+  A: 'water',
   f: 'flower',
   t: 'tallGrass',
   C: 'cliff',
@@ -226,6 +252,8 @@ const PROP_SCHEDULES: Readonly<Record<string, WorldAnimationIdKey>> = {
   pine: 'pineSway',
   campfire: 'campfire',
   lamp: 'lampGlow',
+  windmill: 'windmill',
+  waterWheel: 'waterWheel',
 }
 
 /**
@@ -240,6 +268,26 @@ const PROP_PACE: Readonly<Record<string, number>> = {
   lamp: 1.8,
   chicken: 2.2,
 }
+
+/**
+ * Per-species flyer pace, applied to the shared 96-168s base loop. The whole
+ * range is deliberately lazy: butterflies drift almost in place, sparrows
+ * and robins make unhurried flits, gulls hold slow level glides, and
+ * dragonflies are the quickest but still hover-mostly with only occasional
+ * short sallies. Nothing darts or zips. Fish and chickens keep their own
+ * pacing.
+ */
+const FLYER_PACE: Readonly<Record<string, { loop: number; amp: number; freq: number }>> = {
+  gull: { loop: 0.8, amp: 0.9, freq: 0.4 },
+  sparrow: { loop: 0.95, amp: 0.7, freq: 0.5 },
+  robin: { loop: 1.05, amp: 0.7, freq: 0.5 },
+  bird: { loop: 0.95, amp: 0.7, freq: 0.5 },
+  dragonfly: { loop: 0.7, amp: 0.35, freq: 0.8 },
+  butterfly: { loop: 1.3, amp: 0.5, freq: 0.35 },
+  monarch: { loop: 1.3, amp: 0.5, freq: 0.35 }
+}
+
+const DEFAULT_FLYER_PACE = { loop: 1, amp: 0.7, freq: 0.5 } as const
 
 /** Object types that swim and so follow pond loops, not the prop scene. */
 const FISH_TYPES: ReadonlySet<string> = new Set(['fish', 'koi', 'bass'])
@@ -295,6 +343,9 @@ const DEFAULT_SHADOW_PROFILE: ShadowProfile = {
 const SHADOW_PROFILES: Readonly<Record<string, ShadowProfile>> = {
   // Buildings cast the widest dab on the map.
   barn: { rxFactor: 0.62, minRxTiles: 0.7, ryTiles: 0.24, coreShare: 0.78, lean: 0.08, dabAlpha: 0.3, contactAlpha: 0.4 },
+  windmill: { rxFactor: 0.6, minRxTiles: 0.7, ryTiles: 0.28, coreShare: 0.7, lean: 0.15, dabAlpha: 0.3, contactAlpha: 0.4 },
+  waterWheel: { rxFactor: 0.6, minRxTiles: 0.7, ryTiles: 0.28, coreShare: 0.7, lean: 0.15, dabAlpha: 0.3, contactAlpha: 0.4 },
+  well: { rxFactor: 0.62, minRxTiles: 0.55, ryTiles: 0.16, coreShare: 0.72, lean: 0.1, dabAlpha: 0.28, contactAlpha: 0.38 },
   cottage: { rxFactor: 0.6, minRxTiles: 0.65, ryTiles: 0.22, coreShare: 0.78, lean: 0.08, dabAlpha: 0.3, contactAlpha: 0.4 },
   // Fence pieces overlap into one continuous line under a run.
   fence: { rxFactor: 0.55, minRxTiles: 0.85, ryTiles: 0.13, coreShare: 0.8, lean: 0.05, dabAlpha: 0.26, contactAlpha: 0.36 },
@@ -310,7 +361,10 @@ const SHADOW_PROFILES: Readonly<Record<string, ShadowProfile>> = {
   sign: { rxFactor: 0.75, minRxTiles: 0.45, ryTiles: 0.14, coreShare: 0.7, lean: 0.12, dabAlpha: 0.28, contactAlpha: 0.38 },
   scarecrow: { rxFactor: 0.6, minRxTiles: 0.6, ryTiles: 0.17, coreShare: 0.72, lean: 0.12, dabAlpha: 0.28, contactAlpha: 0.38 },
   campfire: { rxFactor: 0.58, minRxTiles: 0.6, ryTiles: 0.15, coreShare: 0.72, lean: 0.08, dabAlpha: 0.26, contactAlpha: 0.36 },
-  player: { rxFactor: 0.6, minRxTiles: 0.55, ryTiles: 0.18, coreShare: 0.72, lean: 0.12, dabAlpha: 0.3, contactAlpha: 0.4 }
+  player: { rxFactor: 0.6, minRxTiles: 0.55, ryTiles: 0.18, coreShare: 0.72, lean: 0.12, dabAlpha: 0.3, contactAlpha: 0.4 },
+  // The companion is a big small-animal sprite: a broad, shallow dab that
+  // matches her 40px body without swallowing the path beneath her.
+  cat: { rxFactor: 0.5, minRxTiles: 0.6, ryTiles: 0.18, coreShare: 0.72, lean: 0.12, dabAlpha: 0.3, contactAlpha: 0.4 }
 }
 
 /**
@@ -329,11 +383,11 @@ const OUTLINE_COLOR = '#2a2431'
 
 /**
  * Characters the shoreline pass counts as water: the river itself plus the
- * bridge tiles laid across it, so no bank band is ever drawn against a
- * deck — the river reads as flowing on beneath the timber.
+ * bridge, dam and arch tiles laid across it, so no bank band is ever drawn
+ * against a structure — the river reads as flowing on beneath the stone.
  */
 function isWaterChar(char: string): boolean {
-  return char === WATER_CHAR || char === BRIDGE_CHAR
+  return char === WATER_CHAR || char === BRIDGE_CHAR || char === DAM_CHAR || char === ARCH_CHAR
 }
 
 /* ------------------------------------------------------------------ */
@@ -957,103 +1011,995 @@ function buildWaterOuterCorner(size: number, corner: CornerId): RasterSprite {
 }
 
 /**
- * The river crossing: a wooden bridge deck seen from above, carrying the
- * east-west path over the north-south river. Planks run north-south —
- * perpendicular to the walk line — as ~3px boards with a lit west edge and
- * a shaded seam, timber rails run the long north and south sides with
- * bolted posts at the corners, and a 1px near-black outline wraps the
- * silhouette, matching the world's art conventions. The very north and
- * south edges stay clear so the river still shows beneath the deck. One
- * static frame at the native tile size.
+ * The river crossing: a wooden footbridge seen from above, carrying the
+ * east-west path over the north-south river. The deck is authored as two
+ * half-frames that compose into one bridge: frame 0 is the west half with
+ * its stone abutment on the west edge, frame 1 the east half with its
+ * abutment on the east edge. Vertical planks run north-south, a worn path
+ * band crosses the middle, and chunky post-and-rope rails run along the
+ * north and south edges. The seam between the halves carries no outline,
+ * so the pair reads as one continuous deck; the outer silhouette is
+ * wrapped in the world's near-black outline. Two static frames at the
+ * native tile size.
  */
-function buildBridgeDeck(size: number): RasterSprite {
+function buildBridgeDeckFrames(size: number, single = false): RasterSprite {
+  return single
+    ? spriteOf([buildBridgeHalf(size, 0, true)])
+    : spriteOf([buildBridgeHalf(size, 0), buildBridgeHalf(size, 1)])
+}
+
+/** One half of the footbridge; `half` 0 is west, 1 is east. */
+function buildBridgeHalf(size: number, half: 0 | 1, single = false): RasterFrame {
   const rows = emptyRows(size, size)
   const palette = {
     o: OUTLINE_COLOR,
-    L: '#d9a86a', // rail top face catching the light
-    l: '#c99a63', // lit plank edge
-    p: '#a97a4e', // plank body
-    d: '#7c5233', // shaded seam between boards
-    r: '#8a5f3a', // rail body
-    R: '#6b4426', // rail shaded face / post block
-    k: '#4a3020'  // rain gap where two boards part
+    L: '#e0b47a', // rail top face catching the light
+    l: '#d9a86a', // lit plank edge
+    p: '#b8875a', // plank body
+    d: '#8f6238', // shaded seam between boards
+    k: '#5a3a24', // dark gap between boards / knot
+    r: '#a97a4e', // rail body
+    R: '#7c5233', // rail shaded face
+    s: '#c9b79a', // stone lit face
+    S: '#a89478', // stone body
+    t: '#7d6b55', // stone shade / mortar
+    w: '#e8c48f', // worn path lit edge
+    W: '#cfa06a', // worn path body
+    v: '#a97a4e', // worn path shade
+    e: '#efe3c4', // pale rope
+    m: '#5f9e5a', // bank moss
+    M: '#3f7a44', // bank moss shade
+    h: 'rgba(20, 30, 40, 0.18)', // water shadow, near row
+    H: 'rgba(20, 30, 40, 0.10)'  // water shadow, far row
   }
+
+  // Both frames describe one 2*size-wide bridge; global x is clipped into
+  // this half so posts and rope can straddle the seam.
+  const plot = (gx: number, y: number, tone: string): void => {
+    const x = gx - half * size
+    if (x < 0 || x >= size || y < 0 || y >= size) return
+    rows[y][x] = tone
+  }
+
   // Water breathing room top and bottom, so the deck floats over the river.
   const pad = Math.max(1, Math.round(size / 16))
   const top = pad
   const bottom = size - 1 - pad
-  // Rails are slim 3px beams; they only shrink on absurdly tiny tiles.
-  const railH = Math.max(1, Math.min(3, Math.floor((bottom - top - 1) / 4)))
+  const railH = Math.max(2, Math.min(4, Math.round(size / 8)))
   const northRailTop = top + 1
-  const northRailBottom = northRailTop + railH - 1
   const southRailBottom = bottom - 1
   const southRailTop = southRailBottom - railH + 1
-  const plankTop = northRailBottom + 1
+  const plankTop = northRailTop + railH
   const plankBottom = southRailTop - 1
+  const stoneW = Math.max(2, Math.round(size * 0.09))
+  const plankW = Math.max(3, Math.round(size / 8))
+  const plankStart = stoneW + 1
+  const plankEnd = size * 2 - 2 - stoneW
 
-  // Silhouette: one pixel of near-black all around the deck.
-  for (let x = 0; x < size; x++) {
-    rows[top][x] = 'o'
-    rows[bottom][x] = 'o'
+  // Silhouette: one pixel of near-black around the outer deck edge. The
+  // seam edge stays open so the two halves join without a dark spine.
+  for (let gx = 0; gx < size * 2; gx++) {
+    plot(gx, top, 'o')
+    plot(gx, bottom, 'o')
   }
   for (let y = top; y <= bottom; y++) {
-    rows[y][0] = 'o'
-    rows[y][size - 1] = 'o'
+    plot(0, y, 'o')
+    plot(size * 2 - 1, y, 'o')
   }
 
   // Rails: a lit top face, a body, then a shaded face toward the planks.
-  for (let x = 1; x < size - 1; x++) {
-    for (let y = northRailTop; y <= northRailBottom; y++) {
-      rows[y][x] = y === northRailTop ? 'L' : y === northRailBottom ? 'R' : 'r'
+  for (let gx = 1; gx < size * 2 - 1; gx++) {
+    for (let i = 0; i < railH; i++) {
+      const tone = i === 0 ? 'L' : i === railH - 1 ? 'R' : 'r'
+      plot(gx, northRailTop + i, tone)
+      plot(gx, southRailTop + i, tone)
     }
-    for (let y = southRailTop; y <= southRailBottom; y++) {
-      rows[y][x] = y === southRailTop ? 'L' : y === southRailBottom ? 'R' : 'r'
+  }
+
+  // Planks: vertical boards across the deck, each with a lit west edge, a
+  // shaded seam and a thin dark gap. The worn band through the middle
+  // swaps in lighter tones where feet polish the boards.
+  const bandH = Math.max(3, Math.round(size * 0.19))
+  const bandTop = Math.round((plankTop + plankBottom - bandH + 1) / 2)
+  const bandBottom = bandTop + bandH - 1
+  const wornTone = (tone: string): string =>
+    tone === 'l' ? 'w' : tone === 'p' ? 'W' : tone === 'd' || tone === 'k' ? 'v' : tone
+  for (let y = plankTop; y <= plankBottom; y++) {
+    for (let gx = plankStart; gx <= plankEnd; gx++) {
+      const edge = (gx - plankStart) % plankW
+      const tone = edge === 0 ? 'l' : edge === plankW - 1 ? 'k' : edge === plankW - 2 && plankW >= 4 ? 'd' : 'p'
+      const inBand = y >= bandTop && y <= bandBottom
+      const dither = y === bandTop || y === bandBottom
+      const worn = inBand && (!dither || (gx + y) % 2 === 0)
+      plot(gx, y, worn ? wornTone(tone) : tone)
     }
   }
 
-  // Planks: vertical boards across the tile width, each with its lit west
-  // edge and its shaded east seam, tucked between the two rails.
-  const plankW = Math.max(2, Math.min(3, Math.floor(size / 10)))
-  for (let x = 1; x < size - 1; x++) {
-    const edge = (x - 1) % plankW
-    const tone = edge === 0 ? 'l' : edge === plankW - 1 ? 'd' : 'p'
-    for (let y = plankTop; y <= plankBottom; y++) rows[y][x] = tone
+  // A knot or two per half, set into the board bodies.
+  const knots: ReadonlyArray<readonly [number, number]> =
+    half === 0
+      ? [[Math.round(size * 0.28), Math.round(size * 0.28)], [Math.round(size * 0.66), Math.round(size * 0.69)]]
+      : [[Math.round(size * 0.16), Math.round(size * 0.31)], [Math.round(size * 0.53), Math.round(size * 0.66)]]
+  for (const [x, y] of knots) {
+    if (x > 0 && x < size - 1 && y > top && y < bottom) rows[y][x] = 'k'
   }
 
-  // A couple of rain gaps: thin dark lines where two boards part.
-  const boards = Math.floor((size - 2) / plankW)
-  const gapCount = Math.max(1, Math.floor(boards / 4))
-  for (let i = 0; i < gapCount; i++) {
-    const board = Math.min(boards - 1, 1 + Math.round(((i + 1) * (boards - 2)) / (gapCount + 1)))
-    const gapX = 1 + board * plankW
-    if (gapX <= 0 || gapX >= size - 1) continue
-    for (let y = plankTop; y <= plankBottom; y++) rows[y][gapX] = 'k'
+  // Stone abutments where the deck meets the bank. A paired bridge gets one
+  // on its outer edge; a single-tile bridge gets one on both edges, so its
+  // open seam never exposes the water-edge band as a white strip.
+  const westAbut = half === 0 ? 1 : size * 2 - 1 - stoneW
+  const eastAbut = single ? size - 1 - stoneW : -1
+  for (let y = top + 1; y <= bottom - 1; y++) {
+    const mortar = (y - top) % 6 === 0
+    for (let i = 0; i < stoneW; i++) {
+      const tone = mortar ? 't' : i === 0 ? 's' : i === stoneW - 1 ? 't' : 'S'
+      plot(westAbut + i, y, tone)
+      if (eastAbut >= 0) plot(eastAbut + i, y, tone)
+    }
+  }
+  // Moss tufts at the abutment tops and a soft shadow at their feet blend
+  // the stone into the grass bank on both sides.
+  for (let i = 0; i < Math.min(2, stoneW); i++) {
+    plot(westAbut + i, top + 1, i === 0 ? 'm' : 'M')
+    plot(westAbut + i, top + 2, 'M')
+    if (eastAbut >= 0) {
+      plot(eastAbut + stoneW - 1 - i, top + 1, i === 0 ? 'm' : 'M')
+      plot(eastAbut + stoneW - 1 - i, top + 2, 'M')
+    }
+  }
+  for (let i = 0; i < stoneW; i++) {
+    plot(westAbut + i, bottom - 1, 'H')
+    if (eastAbut >= 0) plot(eastAbut + i, bottom - 1, 'H')
   }
 
-  // Corner posts: chunky blocks a row deeper than the rail, bolted down.
-  const postW = Math.max(3, Math.round(size / 8))
+  // Posts every ~8px, three pixels wide, with a lit top face. They are
+  // placed in global coordinates so the pair straddling the seam is drawn
+  // by both halves and reads as one post.
+  const postW = Math.max(3, Math.round(size / 10))
+  const spacing = Math.max(6, Math.round(size / 4))
+  const postXs: number[] = []
+  for (let gx = Math.round(size * 0.19); gx + postW <= size * 2 - Math.round(size * 0.06); gx += spacing) {
+    postXs.push(gx)
+  }
+
+  // Rope: a pale line sagging 2px between posts, lying on the rail top.
+  for (let i = 0; i < postXs.length - 1; i++) {
+    const gapStart = postXs[i] + postW
+    const gapEnd = postXs[i + 1] - 1
+    const span = gapEnd - gapStart
+    if (span < 1) continue
+    for (let gx = gapStart; gx <= gapEnd; gx++) {
+      const t = (gx - gapStart) / span
+      const sag = Math.round(Math.sin(Math.PI * t) * 2)
+      plot(gx, northRailTop + sag, 'e')
+      plot(gx, southRailTop + sag, 'e')
+    }
+  }
+
+  // Posts sit on top of the rope ends: a lit cap, a body, a shaded face
+  // and a dark foot one row into the planks.
   const postH = railH + 1
-  const post = (x0: number, y0: number): void => {
-    for (let dy = 0; dy < postH; dy++) {
-      const y = y0 + dy
-      if (y <= top || y >= bottom) continue
-      for (let dx = 0; dx < postW; dx++) {
-        const x = x0 + dx
-        if (x <= 0 || x >= size - 1) continue
-        rows[y][x] = dy === 0 ? 'r' : 'R'
+  for (const gx of postXs) {
+    for (let dx = 0; dx < postW; dx++) {
+      for (let i = 0; i < postH; i++) {
+        const tone = i === 0 ? 'L' : i === postH - 1 ? 'k' : i === postH - 2 ? 'R' : 'r'
+        plot(gx + dx, northRailTop + i, tone)
+        plot(gx + dx, southRailTop - 1 + i, tone)
       }
     }
-    if (y0 > top && x0 > 0) rows[y0][x0] = 'l'
-    const boltX = x0 + Math.floor(postW / 2)
-    const boltY = y0 + Math.floor(postH / 2)
-    if (boltY > top && boltY < bottom && boltX > 0 && boltX < size - 1) rows[boltY][boltX] = 'o'
   }
-  post(1, northRailTop)
-  post(size - 1 - postW, northRailTop)
-  post(1, southRailBottom - postH + 1)
-  post(size - 1 - postW, southRailBottom - postH + 1)
 
+  // The deck casts a soft two-row shadow onto the river below it; light
+  // comes from the top left, so the far row leans a pixel to the right.
+  if (bottom + 1 < size) {
+    for (let gx = 1; gx < size * 2 - 1; gx++) plot(gx, bottom + 1, 'h')
+  }
+  if (bottom + 2 < size) {
+    for (let gx = 2; gx < size * 2 - 1; gx++) plot(gx, bottom + 2, 'H')
+  }
+
+  return rowsToFrame(rows, palette)
+}
+
+/** Native-pixel layout of the dam's raised silhouette. */
+interface DamLayout {
+  /** How far the frame rises above its tile top. */
+  rise: number
+  /** Still-water rows at the top of the frame, where the pond meets the wall. */
+  waterEdgeH: number
+  /** Walkable crest height. */
+  crestH: number
+  /** Total frame height. */
+  height: number
+  /** Frame y of the walkable crest surface, used to lift the player. */
+  crestTop: number
+  /** Frame y of the crest's downstream edge, where the cascade sheets over. */
+  crestEdge: number
+  /** Frame y where the downstream stone face begins. */
+  faceTop: number
+  /** Height of the downstream stone face in frame pixels. */
+  faceH: number
+}
+
+function damLayout(size: number): DamLayout {
+  const rise = Math.max(10, Math.round(size * 0.62))
+  const waterEdgeH = Math.max(2, Math.round(size * 0.09))
+  const crestH = Math.max(6, Math.round(size * 0.22))
+  const height = size + rise
+  const crestTop = waterEdgeH + 1
+  const crestEdge = crestTop + crestH
+  const faceTop = crestEdge + 1
+  return {
+    rise,
+    waterEdgeH,
+    crestH,
+    height,
+    crestTop,
+    crestEdge,
+    faceTop,
+    faceH: height - 1 - faceTop
+  }
+}
+
+/**
+ * The stone dam: a broad, tall weir wall standing across the channel,
+ * holding the pond back on its upstream face. Authored as two half-frames
+ * that compose into one continuous structure, like the footbridge: frame 0
+ * is the west half, frame 1 the east half. The seam carries no outline and
+ * the crest runs unbroken across it, so the pair reads as one wall.
+ */
+function buildDamFrames(size: number): RasterSprite {
+  return spriteOf([buildDamHalf(size, 0), buildDamHalf(size, 1)])
+}
+
+/** One half of the stone dam; `half` 0 is west, 1 is east. */
+function buildDamHalf(size: number, half: 0 | 1): RasterFrame {
+  const layout = damLayout(size)
+  const rows = emptyRows(size, layout.height)
+  const palette = {
+    o: OUTLINE_COLOR,
+    s: '#c9b79a', // stone lit face
+    S: '#a89478', // stone body
+    t: '#7d6b55', // stone shade / mortar
+    k: '#5a4a3a', // deep joint
+    d: '#8a6238', // crest path shade
+    w: '#e0bc84', // worn path highlight
+    W: '#cfa06a', // worn path body
+    c: '#3272a4', // still pond water
+    b: '#28618f', // shaded pond water at the wall
+    g: '#a8dce8', // calm waterline glint
+    f: '#6fb4d4', // water crest
+    m: '#5f7a52', // bank moss
+    M: '#45583f'  // bank moss shade
+  }
+  const plot = (gx: number, y: number, tone: string): void => {
+    const x = gx - half * size
+    if (x < 0 || x >= size || y < 0 || y >= layout.height) return
+    rows[y][x] = tone
+  }
+  const bottom = layout.height - 1
+  const crestTop = layout.crestTop
+  const crestEdge = layout.crestEdge
+  const faceTop = layout.faceTop
+  const faceBottom = bottom - 1
+  const abutW = Math.max(5, Math.round(size * 0.18))
+  const gxStart = half * size
+  const gxEnd = gxStart + size - 1
+  const outerX = half === 0 ? 0 : size * 2 - 1
+
+  // Still pond water at the wall: two shaded rows and a calm glint line.
+  // The water is stopped against the dam, so the band is deliberately flat.
+  for (let gx = gxStart; gx <= gxEnd; gx++) {
+    plot(gx, 0, (gx + half) % 5 === 0 ? 'b' : 'c')
+    plot(gx, 1, (gx + half) % 4 === 0 ? 'c' : 'b')
+    const wave = Math.round(Math.sin(gx * 0.7 + half * 1.3))
+    const tone = (gx + wave) % 7 === 0 ? 'b' : (gx + wave) % 5 === 0 ? 'f' : 'g'
+    plot(gx, 2, tone)
+  }
+
+  // Crest silhouette: one unbroken top line across both halves. The seam
+  // has no vertical outline, so the wall never reads as two pieces.
+  for (let gx = gxStart; gx <= gxEnd; gx++) plot(gx, crestTop - 1, 'o')
+
+  // Capstone band along the crest's north edge: individual stone blocks with
+  // a lit top, a body, a shade lip and a deep joint between neighbours.
+  const capW = Math.max(4, Math.round(size * 0.17))
+  for (let gx = gxStart; gx <= gxEnd; gx++) {
+    const joint = gx % capW === 0
+    plot(gx, crestTop, joint ? 'k' : 's')
+    plot(gx, crestTop + 1, joint ? 'k' : 'S')
+    plot(gx, crestTop + 2, joint ? 'k' : 't')
+  }
+
+  // Worn walkway below the capstones: a lit path body with subtle seams and
+  // a shade lip. The path is continuous across the seam.
+  for (let y = crestTop + 3; y < crestEdge; y++) {
+    for (let gx = gxStart; gx <= gxEnd; gx++) {
+      const seam = gx % 5 === 0
+      const worn = (gx + y) % 13 === 0
+      const tone = y === crestEdge - 1 ? 'd' : seam ? 'd' : worn ? 'w' : 'W'
+      plot(gx, y, tone)
+    }
+  }
+  // The crest's downstream edge is a shade lip; the cascade sheets over it.
+  for (let gx = gxStart; gx <= gxEnd; gx++) plot(gx, crestEdge, 'd')
+
+  // Downstream face: three chunky, top-lit courses of stone. Each block has
+  // a lit top and left edge, a body, and a shaded bottom-right corner, with
+  // mortar seams between courses and staggered deep joints between blocks.
+  const courses = 3
+  const courseH = Math.max(4, Math.floor((faceBottom - faceTop + 1) / courses))
+  for (let y = faceTop; y <= faceBottom; y++) {
+    const course = Math.min(courses - 1, Math.floor((y - faceTop) / courseH))
+    const courseTop = faceTop + course * courseH
+    const courseBottom = Math.min(faceBottom, courseTop + courseH - 1)
+    const rowInCourse = y - courseTop
+    const isTop = rowInCourse === 0
+    const isBottom = y === courseBottom
+    for (let gx = gxStart; gx <= gxEnd; gx++) {
+      const phase = (gx + course * 3) % 9
+      const joint = phase === 0
+      const blockStart = phase === 1
+      const blockEnd = phase === 8
+      let tone: string
+      if (joint) tone = 'k'
+      else if (isTop || blockStart) tone = 's'
+      else if (isBottom || blockEnd) tone = 't'
+      else tone = 'S'
+      // Shade the bottom-right corner of every block one step deeper.
+      if (!joint && isBottom && blockEnd) tone = 'k'
+      plot(gx, y, tone)
+    }
+  }
+
+  // Chunky abutments at the outer edges: large blocks that anchor the wall
+  // into the bank, one pixel proud of the crest and shaded to the outside.
+  const abutStart = half === 0 ? 0 : size * 2 - abutW
+  const abutCourseH = Math.max(6, Math.round((faceBottom - crestTop + 1) / 4))
+  for (let y = crestTop; y <= faceBottom; y++) {
+    const rowInCourse = (y - crestTop) % abutCourseH
+    const mortar = rowInCourse === abutCourseH - 1
+    for (let i = 0; i < abutW; i++) {
+      const gx = abutStart + i
+      const outerEdge = half === 0 ? i === 0 : i === abutW - 1
+      const innerEdge = half === 0 ? i === abutW - 1 : i === 0
+      let tone: string
+      if (outerEdge) tone = 'o'
+      else if (innerEdge) tone = 'k'
+      else if (mortar) tone = 't'
+      else if (rowInCourse === 0) tone = 's'
+      else if (i === abutW - 2) tone = 't'
+      else tone = 'S'
+      plot(gx, y, tone)
+    }
+  }
+  // A moss tuft at the top outer corner ties the abutment into the bank.
+  for (let i = 0; i < Math.min(3, abutW - 1); i++) {
+    const gx = half === 0 ? 1 + i : size * 2 - 2 - i
+    plot(gx, crestTop, i === 0 ? 'm' : 'M')
+    plot(gx, crestTop + 1, 'M')
+  }
+
+  // Outer edge and bottom outline: the only vertical silhouette lines.
+  for (let y = crestTop - 1; y <= bottom; y++) plot(outerX, y, 'o')
+  for (let gx = gxStart; gx <= gxEnd; gx++) plot(gx, bottom, 'o')
+
+  return rowsToFrame(rows, palette)
+}
+
+/**
+ * The dam's downstream cascade: a broad curtain of falling water that sheets
+ * over the crest's downstream edge and runs down the stone face into a foam
+ * churn pool at its foot. Four static frames in the river-flow family; frame
+ * 0 is the west half and frame 1 the east half, so the pair composes into one
+ * fall. The sheet spans most of the face and feathers out at its sides, so it
+ * reads as a cascade, never as a crack at the seam.
+ */
+function buildDamSpillFrames(size: number, half: 0 | 1): RasterSprite {
+  const layout = damLayout(size)
+  const h = Math.max(8, layout.faceH)
+  const palette = {
+    w: 'rgba(214, 248, 255, 0.5)', // falling water
+    f: 'rgba(240, 255, 255, 0.68)', // foam
+    s: 'rgba(190, 240, 255, 0.32)'  // spray / feathered edge
+  }
+  const frames: RasterFrame[] = []
+  for (let f = 0; f < 4; f++) {
+    const rows = emptyRows(size, h)
+    const rng = mulberry32(0xd4a3 + f * 1301 + half * 733)
+    const seamX = half === 0 ? size - 1 : 0
+    const outerEdge = half === 0 ? 0 : size - 1
+    const dir = half === 0 ? -1 : 1
+    // Broad curtain: the sheet spans most of the face and widens as it falls.
+    for (let y = 0; y < h; y++) {
+      const t = y / Math.max(1, h - 1)
+      const spread = size * (0.5 + 0.18 * Math.sin(t * Math.PI))
+      const sheetW = Math.max(8, Math.round(spread + (f % 2)))
+      for (let i = 0; i < sheetW; i++) {
+        const x = seamX + dir * i
+        if (x === outerEdge || x < 0 || x >= size) continue
+        const edge = i / Math.max(1, sheetW - 1)
+        const wobble = Math.sin(y * 0.62 + f * 1.9 + i * 0.85)
+        // Feather the outer third: dither it out instead of a hard edge.
+        if (edge > 0.62) {
+          const fade = (edge - 0.62) / 0.38
+          if (wobble < -0.1 - fade * 0.6) continue
+          rows[y][x] = 's'
+        } else {
+          rows[y][x] = edge < 0.18 ? 'f' : 'w'
+        }
+      }
+      // A few translucent pixels beyond the sheet feather the vertical edge.
+      for (let i = sheetW; i < sheetW + 4; i++) {
+        const x = seamX + dir * i
+        if (x === outerEdge || x < 0 || x >= size) continue
+        if ((y + i + f) % 5 === 0) rows[y][x] = 's'
+      }
+    }
+    // Bright ribbons inside the sheet, so the curtain has vertical grain.
+    for (let i = 0; i < 6; i++) {
+      const baseX = seamX + dir * (2 + i * 3)
+      let prevX = -1
+      for (let y = 0; y < h; y++) {
+        const x = clampNumber(
+          Math.round(baseX + Math.sin(y * 0.5 + f * 1.7 + i * 2.1) * 1.4),
+          0,
+          size - 1
+        )
+        if (prevX >= 0 && Math.abs(x - prevX) > 1) {
+          const lo = Math.min(prevX, x)
+          const hi = Math.max(prevX, x)
+          for (let px = lo; px <= hi; px++) rows[y][px] = 'f'
+        } else {
+          rows[y][x] = 'f'
+        }
+        prevX = x
+      }
+    }
+    // Broad foam churn at the foot, spanning the sheet.
+    const foamY = Math.round(h * 0.86)
+    for (let i = 0; i < 4; i++) {
+      const cx = seamX + dir * (3 + i * 5)
+      const cy = foamY + (i % 2) * 2
+      for (let a = 0; a <= 14; a++) {
+        const angle = Math.PI * (0.05 + (a / 14) * 0.9)
+        const x = Math.round(cx + Math.cos(angle) * (size * 0.2) * dir)
+        const y = Math.round(cy + Math.sin(angle) * (h * 0.06))
+        if (x !== outerEdge && x >= 0 && x < size && y >= 1 && y < h - 1) rows[y][x] = 'f'
+      }
+    }
+    for (let i = 0; i < 14; i++) {
+      const x = clampNumber(seamX + dir * Math.round(rng() * (size * 0.5)), 0, size - 1)
+      const y = clampNumber(foamY + Math.round(rng() * (h * 0.1)), 1, h - 2)
+      rows[y][x] = rng() < 0.5 ? 'f' : 's'
+    }
+    frames.push(rowsToFrame(rows, palette))
+  }
+  return spriteOf(frames)
+}
+
+/**
+ * The stone arch bridge: the deck rises to an apex at the seam between the
+ * two tiles and falls to stone abutments at the outer ends. Frame 0 is the
+ * west half, frame 1 the east half; the seam carries no outline, so the
+ * pair reads as one arc. Water and a soft shadow show beneath the deck.
+ */
+function buildArchFrames(size: number): RasterSprite {
+  return spriteOf([buildArchHalf(size, 0), buildArchHalf(size, 1)])
+}
+
+/** Native-pixel deck top for one arch half at a local x. */
+function archDeckTop(size: number, half: 0 | 1, localX: number): number {
+  const apexY = Math.max(6, Math.round(size * 0.28))
+  const rise = Math.max(6, Math.round(size * 0.4))
+  const d = half === 0 ? size - 1 - localX : localX
+  const t = d / Math.max(1, size - 1)
+  return apexY + Math.round(rise * t * t)
+}
+
+/** One half of the arch bridge; `half` 0 is west, 1 is east. */
+function buildArchHalf(size: number, half: 0 | 1): RasterFrame {
+  const rows = emptyRows(size, size)
+  const palette = {
+    o: OUTLINE_COLOR,
+    s: '#c9b79a', // stone lit
+    S: '#a89478', // stone body
+    t: '#7d6b55', // stone shade
+    k: '#5a4a3a', // joint
+    w: '#e0bc84', // worn path lit
+    W: '#cfa06a', // worn path body
+    d: '#8a6238', // worn path shade
+    L: '#e0b47a', // post lit top
+    r: '#a97a4e', // post body
+    R: '#7c5233', // post shade
+    e: '#efe3c4', // pale rope
+    h: 'rgba(20, 30, 40, 0.22)', // under-deck shadow
+    H: 'rgba(20, 30, 40, 0.12)'
+  }
+  const plot = (gx: number, y: number, tone: string): void => {
+    const x = gx - half * size
+    if (x < 0 || x >= size || y < 0 || y >= size) return
+    rows[y][x] = tone
+  }
+  const deckTop = (gx: number): number => archDeckTop(size, half, gx - half * size)
+
+  // Deck band: a lit stone top, body, worn path, shade, then a soft shadow.
+  for (let gx = 0; gx < size * 2; gx++) {
+    const localX = gx - half * size
+    if (localX < 0 || localX >= size) continue
+    const top = deckTop(gx)
+    plot(gx, top - 1, 'o')
+    plot(gx, top, 's')
+    plot(gx, top + 1, 'S')
+    plot(gx, top + 2, 'W')
+    plot(gx, top + 3, 'W')
+    plot(gx, top + 4, 'S')
+    plot(gx, top + 5, 't')
+    plot(gx, top + 6, 'h')
+    plot(gx, top + 7, 'H')
+  }
+
+  // Stone abutments at the outer ends, from the deck down to the water.
+  const abutW = Math.max(4, Math.round(size * 0.16))
+  for (let dx = 0; dx < abutW; dx++) {
+    const gx = half === 0 ? dx : size * 2 - abutW + dx
+    const top = deckTop(gx)
+    for (let y = top; y < size; y++) {
+      const tone = y === top ? 's' : (y - top) % 5 === 0 ? 't' : dx === 0 ? 's' : dx === abutW - 1 ? 't' : 'S'
+      plot(gx, y, tone)
+    }
+  }
+  // Abutment outline: outer edge and bottom.
+  const outerX = half === 0 ? 0 : size * 2 - 1
+  for (let y = deckTop(outerX); y < size; y++) plot(outerX, y, 'o')
+  for (let gx = 0; gx < size * 2; gx++) {
+    const localX = gx - half * size
+    if (localX < 0 || localX >= size) continue
+    if (half === 0 ? localX < abutW : localX >= size - abutW) plot(gx, size - 1, 'o')
+  }
+
+  // Posts and rope along the north and south deck edges, following the arc.
+  const postW = Math.max(2, Math.round(size / 12))
+  const spacing = Math.max(6, Math.round(size / 4))
+  const postXs: number[] = []
+  for (let gx = Math.round(size * 0.19); gx + postW <= size * 2 - Math.round(size * 0.06); gx += spacing) {
+    postXs.push(gx)
+  }
+  for (let i = 0; i < postXs.length - 1; i++) {
+    const gapStart = postXs[i] + postW
+    const gapEnd = postXs[i + 1] - 1
+    const span = gapEnd - gapStart
+    if (span < 1) continue
+    for (let gx = gapStart; gx <= gapEnd; gx++) {
+      const t = (gx - gapStart) / span
+      const sag = Math.round(Math.sin(Math.PI * t) * 1)
+      plot(gx, deckTop(gx) - 1 + sag, 'e')
+      plot(gx, deckTop(gx) + 5 + sag, 'e')
+    }
+  }
+  for (const gx of postXs) {
+    for (let dx = 0; dx < postW; dx++) {
+      const top = deckTop(gx + dx)
+      plot(gx + dx, top - 3, 'o')
+      plot(gx + dx, top - 2, 'L')
+      plot(gx + dx, top - 1, 'r')
+      plot(gx + dx, top, 'R')
+      plot(gx + dx, top + 4, 'L')
+      plot(gx + dx, top + 5, 'r')
+      plot(gx + dx, top + 6, 'R')
+      plot(gx + dx, top + 7, 'o')
+    }
+  }
+
+  return rowsToFrame(rows, palette)
+}
+
+type ShoreSide = 'n' | 'e' | 's' | 'w'
+
+/** Map a bank-relative point (along the bank, depth into water) to a tile pixel. */
+function shorePoint(side: ShoreSide, along: number, depth: number, size: number): [number, number] {
+  if (side === 'n') return [along, depth]
+  if (side === 's') return [along, size - 1 - depth]
+  if (side === 'w') return [depth, along]
+  return [size - 1 - depth, along]
+}
+
+/** Reeds overhanging from a grass bank into the water. */
+function buildShoreReeds(size: number, side: ShoreSide): RasterSprite {
+  const rows = emptyRows(size, size)
+  const palette = {
+    g: '#5f9e5a', // reed stem
+    G: '#3f7a44', // shade
+    l: '#8fc47a', // lit blade
+    h: '#b08a4a'  // seed head
+  }
+  const rng = mulberry32(0x5eed + side.charCodeAt(0) * 97)
+  const count = 4 + (side.charCodeAt(0) % 3)
+  for (let i = 0; i < count; i++) {
+    const along = Math.round(size * (0.12 + ((i + 0.5) / count) * 0.76))
+    const len = 5 + Math.floor(rng() * 6)
+    const lean = Math.round((rng() - 0.5) * 4)
+    for (let d = 0; d < len; d++) {
+      const [x, y] = shorePoint(side, along + Math.round((lean * d) / len), d, size)
+      if (x < 0 || x >= size || y < 0 || y >= size) continue
+      rows[y][x] = d === len - 1 ? 'h' : d % 3 === 0 ? 'l' : d % 3 === 1 ? 'g' : 'G'
+    }
+  }
   return spriteOf([rowsToFrame(rows, palette)])
+}
+
+/** Soft foam crescents and a translucent shallows tint where water meets sand. */
+function buildShoreFoam(size: number, side: ShoreSide): RasterSprite {
+  const rows = emptyRows(size, size)
+  const palette = {
+    f: 'rgba(240, 255, 255, 0.55)', // foam crest
+    s: 'rgba(214, 248, 255, 0.32)', // soft wash
+    t: 'rgba(214, 196, 158, 0.18)'  // shallows tint into the sand
+  }
+  const reach = Math.max(6, Math.round(size * 0.34))
+  // A 1-2px translucent shallows tint softens the hard waterline.
+  for (let along = 0; along < size; along++) {
+    const wobble = ((along * 7 + side.charCodeAt(0) * 13) % 5) / 5
+    const depth = 1 + Math.round(wobble)
+    for (let d = 0; d <= depth; d++) {
+      const [x, y] = shorePoint(side, along, d, size)
+      if (x < 0 || x >= size || y < 0 || y >= size) continue
+      if (d === 0 || (along + d) % 2 === 0) rows[y][x] = 't'
+    }
+  }
+  // Two large, soft crescents instead of a dense speckled wash.
+  for (let i = 0; i < 2; i++) {
+    const offset = Math.round(size * (0.28 + i * 0.4))
+    const radius = reach - i * 2
+    for (let a = 0; a <= 18; a++) {
+      const angle = Math.PI * (0.08 + (a / 18) * 0.84)
+      const along = offset + Math.round(Math.cos(angle) * radius)
+      const depth = Math.round(Math.sin(angle) * radius * 0.62)
+      const [x, y] = shorePoint(side, along, depth, size)
+      if (x >= 0 && x < size && y >= 0 && y < size) rows[y][x] = a % 5 === 0 ? 's' : 'f'
+      // A second row makes the crescent 2px thick and soft.
+      if (a % 2 === 0) {
+        const [x2, y2] = shorePoint(side, along, depth + 1, size)
+        if (x2 >= 0 && x2 < size && y2 >= 0 && y2 < size) rows[y2][x2] = 's'
+      }
+    }
+  }
+  return spriteOf([rowsToFrame(rows, palette)])
+}
+
+/** A 1-2px translucent shallows tint that fades water into a sand bank. */
+function buildShallowsTint(size: number, side: ShoreSide): RasterSprite {
+  const rows = emptyRows(size, size)
+  const palette = {
+    t: 'rgba(214, 196, 158, 0.2)',
+    u: 'rgba(214, 196, 158, 0.1)'
+  }
+  for (let along = 0; along < size; along++) {
+    const wobble = ((along * 5 + side.charCodeAt(0) * 11) % 4) / 4
+    const depth = 1 + Math.round(wobble)
+    for (let d = 0; d <= depth; d++) {
+      const [x, y] = shorePoint(side, along, d, size)
+      if (x < 0 || x >= size || y < 0 || y >= size) continue
+      if (d === 0) rows[y][x] = 't'
+      else if ((along + d) % 2 === 0) rows[y][x] = 'u'
+    }
+  }
+  return spriteOf([rowsToFrame(rows, palette)])
+}
+
+/**
+ * A wide, soft sand-to-water band: a 3px translucent shallows fade, a broken
+ * foam lip, and two large 3-4px crescents. It replaces the bank's hard edge
+ * band on sand seams, so the beach never speckles or ends on a straight line.
+ */
+function buildSandShoreBand(size: number, side: ShoreSide): RasterSprite {
+  const rows = emptyRows(size, size)
+  const palette = {
+    t: 'rgba(214, 196, 158, 0.24)',
+    u: 'rgba(214, 196, 158, 0.12)',
+    f: 'rgba(240, 255, 255, 0.5)',
+    s: 'rgba(214, 248, 255, 0.28)'
+  }
+  for (let along = 0; along < size; along++) {
+    const wobble = ((along * 7 + side.charCodeAt(0) * 13) % 7) / 7
+    // 3px translucent shallows band.
+    for (let d = 0; d <= 2; d++) {
+      const [x, y] = shorePoint(side, along, d, size)
+      if (x < 0 || x >= size || y < 0 || y >= size) continue
+      if (d === 0) rows[y][x] = 't'
+      else if (d === 1) rows[y][x] = 'u'
+      else if ((along + d) % 2 === 0) rows[y][x] = 'u'
+    }
+    // A broken 1-2px foam lip, no isolated pixels.
+    if ((along + Math.round(wobble * 3)) % 9 < 4) {
+      const [x, y] = shorePoint(side, along, 0, size)
+      if (x >= 0 && x < size && y >= 0 && y < size) rows[y][x] = 'f'
+      const [x2, y2] = shorePoint(side, along, 1, size)
+      if (x2 >= 0 && x2 < size && y2 >= 0 && y2 < size) rows[y2][x2] = 's'
+    }
+  }
+  // Two large 3-4px crescents per tile, soft and wide.
+  const reach = Math.max(7, Math.round(size * 0.38))
+  for (let i = 0; i < 2; i++) {
+    const offset = Math.round(size * (0.26 + i * 0.42))
+    const radius = reach - i * 2
+    for (let a = 0; a <= 20; a++) {
+      const angle = Math.PI * (0.06 + (a / 20) * 0.88)
+      const along = offset + Math.round(Math.cos(angle) * radius)
+      const depth = Math.round(Math.sin(angle) * radius * 0.6)
+      for (let thick = 0; thick < 3; thick++) {
+        const [x, y] = shorePoint(side, along, depth + thick, size)
+        if (x < 0 || x >= size || y < 0 || y >= size) continue
+        if (thick === 0) rows[y][x] = a % 5 === 0 ? 's' : 'f'
+        else if (thick === 1) rows[y][x] = 's'
+        else if (a % 2 === 0) rows[y][x] = 's'
+      }
+    }
+  }
+  return spriteOf([rowsToFrame(rows, palette)])
+}
+
+type MouthVariant = 'left' | 'right' | 'middle'
+
+/**
+ * A river-mouth delta: a 2-3px shallows tint across the north edge and large
+ * foam arcs curling into the sea from the mouth lips. The middle tiles carry
+ * a soft foam wash, so a widened mouth still reads as one delta.
+ */
+function buildMouthDelta(size: number, variant: MouthVariant): RasterSprite {
+  const rows = emptyRows(size, size)
+  const palette = {
+    t: 'rgba(214, 196, 158, 0.22)',
+    u: 'rgba(214, 196, 158, 0.11)',
+    f: 'rgba(240, 255, 255, 0.55)',
+    s: 'rgba(214, 248, 255, 0.32)'
+  }
+  // A 2-3px shallows tint across the north edge blends river into sea.
+  for (let x = 0; x < size; x++) {
+    const wobble = ((x * 7 + variant.charCodeAt(0) * 13) % 5) / 5
+    const depth = 2 + Math.round(wobble)
+    for (let d = 0; d <= depth; d++) {
+      if (d === 0) rows[d][x] = 't'
+      else if (d === 1) rows[d][x] = 'u'
+      else if ((x + d) % 2 === 0) rows[d][x] = 'u'
+    }
+  }
+  // Large foam arcs curl into the sea from the left and right lips.
+  const arcs = variant === 'middle' ? 0 : 2
+  for (let i = 0; i < arcs; i++) {
+    const radius = Math.round(size * (0.3 + i * 0.12))
+    const cx = variant === 'left' ? 2 : size - 3
+    const cy = 1
+    for (let a = 0; a <= 22; a++) {
+      const angle = Math.PI * (0.05 + (a / 22) * 0.9)
+      const x = Math.round(cx + Math.cos(angle) * radius * (variant === 'right' ? -1 : 1))
+      const y = Math.round(cy + Math.sin(angle) * radius * 0.7)
+      for (let thick = 0; thick < 3; thick++) {
+        const px = clampNumber(x, 0, size - 1)
+        const py = clampNumber(y + thick, 0, size - 1)
+        if (thick === 0) rows[py][px] = a % 5 === 0 ? 's' : 'f'
+        else if (thick === 1) rows[py][px] = 's'
+        else if (a % 2 === 0) rows[py][px] = 's'
+      }
+    }
+  }
+  // A few soft foam dashes in the middle of the mouth.
+  if (variant === 'middle') {
+    for (let i = 0; i < 3; i++) {
+      const x = Math.round(size * (0.2 + i * 0.3))
+      const y = 2 + (i % 2)
+      rows[y][x] = 'f'
+      if (x + 1 < size) rows[y][x + 1] = 's'
+    }
+  }
+  return spriteOf([rowsToFrame(rows, palette)])
+}
+
+/** An occasional small stone at the water's edge. */
+function buildShoreStone(size: number, side: ShoreSide): RasterSprite {
+  const rows = emptyRows(size, size)
+  const palette = { o: OUTLINE_COLOR, s: '#c9b79a', S: '#a89478', t: '#7d6b55' }
+  const w = Math.max(4, Math.round(size * 0.18))
+  const h = Math.max(3, Math.round(size * 0.13))
+  const along = Math.round(size * 0.5)
+  for (let v = 0; v < h; v++) {
+    for (let u = -Math.floor(w / 2); u <= Math.floor(w / 2); u++) {
+      const [x, y] = shorePoint(side, along + u, v, size)
+      if (x < 0 || x >= size || y < 0 || y >= size) continue
+      const edge = v === 0 || v === h - 1 || u === -Math.floor(w / 2) || u === Math.floor(w / 2)
+      rows[y][x] = edge ? 'o' : v === 1 ? 's' : v === h - 2 ? 't' : 'S'
+    }
+  }
+  return spriteOf([rowsToFrame(rows, palette)])
+}
+
+/** A soft foam arc that rounds a water/land corner instead of a hard 90°. */
+function buildSoftCorner(size: number, corner: CornerId): RasterSprite {
+  const rows = emptyRows(size, size)
+  const palette = {
+    f: 'rgba(240, 255, 255, 0.55)',
+    s: 'rgba(214, 248, 255, 0.32)',
+    t: 'rgba(214, 196, 158, 0.12)'
+  }
+  const radius = Math.max(5, Math.round(size * 0.46))
+  for (let a = 0; a <= 20; a++) {
+    const angle = (Math.PI / 2) * (a / 20)
+    const wobble = 1 + (((a * 7) % 5) / 5) * 0.06
+    const r = radius * wobble
+    const dx = Math.round(Math.cos(angle) * r)
+    const dy = Math.round(Math.sin(angle) * r)
+    const x = corner === 'nw' || corner === 'sw' ? dx : size - 1 - dx
+    const y = corner === 'nw' || corner === 'ne' ? dy : size - 1 - dy
+    if (x >= 0 && x < size && y >= 0 && y < size) rows[y][x] = a % 4 === 0 ? 's' : 'f'
+    const ix = corner === 'nw' || corner === 'sw' ? dx - 1 : size - dx
+    const iy = corner === 'nw' || corner === 'ne' ? dy - 1 : size - dy
+    if (ix >= 0 && ix < size && iy >= 0 && iy < size && a % 2 === 0) rows[iy][ix] = 's'
+  }
+  // A faint tint inside the arc covers the right-angle step underneath.
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dx = corner === 'nw' || corner === 'sw' ? x : size - 1 - x
+      const dy = corner === 'nw' || corner === 'ne' ? y : size - 1 - y
+      if (Math.hypot(dx, dy) < radius * 0.8 && (x + y) % 2 === 0) rows[y][x] = 't'
+    }
+  }
+  return spriteOf([rowsToFrame(rows, palette)])
+}
+
+/**
+ * Static current garnish for the river channel and its pools: sinuous light
+ * streaks, hooked eddies and foam flecks per frame. `bend` curves the
+ * streaks toward the open water beside a bank; `calm` thins the density for
+ * the widened pool. Every frame is mostly transparent so the water base and
+ * its shoreline edges show through; the ground pass picks one frame per
+ * tile by hash, so the river never animates.
+ */
+function buildRiverFlow(size: number, bend: number, calm: boolean): RasterSprite {
+  const palette = {
+    s: 'rgba(214, 248, 255, 0.35)', // streak / eddy
+    f: 'rgba(240, 255, 255, 0.5)'   // foam fleck
+  }
+  // Per frame: three streaks with their own base, amplitude, wavelength
+  // and phase, so no two frames repeat the same curve.
+  const streaks: ReadonlyArray<ReadonlyArray<{ base: number; amp: number; wavelength: number; phase: number }>> = [
+    [
+      { base: 0.24, amp: 3, wavelength: 12, phase: 0.0 },
+      { base: 0.52, amp: 2, wavelength: 9, phase: 2.1 },
+      { base: 0.78, amp: 4, wavelength: 14, phase: 4.2 }
+    ],
+    [
+      { base: 0.31, amp: 2, wavelength: 10, phase: 1.3 },
+      { base: 0.59, amp: 4, wavelength: 13, phase: 3.4 },
+      { base: 0.84, amp: 3, wavelength: 8, phase: 5.0 }
+    ],
+    [
+      { base: 0.19, amp: 4, wavelength: 11, phase: 2.6 },
+      { base: 0.47, amp: 3, wavelength: 14, phase: 0.7 },
+      { base: 0.75, amp: 2, wavelength: 9, phase: 4.8 }
+    ],
+    [
+      { base: 0.28, amp: 3, wavelength: 13, phase: 3.9 },
+      { base: 0.56, amp: 2, wavelength: 8, phase: 1.8 },
+      { base: 0.81, amp: 4, wavelength: 12, phase: 5.7 }
+    ]
+  ]
+  // Two eddy centres per frame, shifting so the swirls never sit still.
+  const eddies: ReadonlyArray<ReadonlyArray<readonly [number, number]>> = [
+    [[0.34, 0.28], [0.72, 0.70]],
+    [[0.44, 0.38], [0.80, 0.58]],
+    [[0.26, 0.62], [0.62, 0.22]],
+    [[0.38, 0.76], [0.76, 0.34]]
+  ]
+  const frames: RasterFrame[] = []
+  const streakCount = calm ? 2 : 3
+  const eddyCount = calm ? 1 : 2
+  const foamCount = calm ? 3 : 5
+  for (let f = 0; f < 4; f++) {
+    const rows = emptyRows(size, size)
+    const specs = streaks[f].slice(0, streakCount)
+    for (let i = 0; i < specs.length; i++) {
+      const spec = specs[i]
+      const baseX = Math.round(size * spec.base)
+      const startY = 2 + (i % 2)
+      const endY = size - 3 - ((i + f) % 2)
+      let prevX = -1
+      for (let y = startY; y <= endY; y++) {
+        const wave = Math.sin((2 * Math.PI * y) / spec.wavelength + spec.phase)
+        // The bend drifts the streak toward the open water beside a bank,
+        // so the current visibly follows the meander instead of a rail.
+        const drift = bend * (2 + (y / size) * 3)
+        const x = clampNumber(Math.round(baseX + spec.amp * wave + drift), 1, size - 2)
+        // Keep the 1px line connected when the sine steps sideways.
+        if (prevX >= 0 && Math.abs(x - prevX) > 1) {
+          const lo = Math.min(prevX, x)
+          const hi = Math.max(prevX, x)
+          for (let px = lo; px <= hi; px++) rows[y][px] = 's'
+        } else {
+          rows[y][x] = 's'
+        }
+        prevX = x
+      }
+    }
+
+    // A tiny spiral that hooks back on itself, two pixels thick.
+    for (const [ex, ey] of eddies[f].slice(0, eddyCount)) {
+      const cx = Math.round(size * ex)
+      const cy = Math.round(size * ey)
+      const steps = 14
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps
+        const angle = -Math.PI * 0.6 + t * Math.PI * 1.8
+        const radius = 3.2 - t * 1.8
+        for (const r of [radius, radius - 1]) {
+          const x = Math.round(cx + Math.cos(angle) * r)
+          const y = Math.round(cy + Math.sin(angle) * r)
+          if (x >= 1 && x < size - 1 && y >= 1 && y < size - 1) rows[y][x] = 's'
+        }
+      }
+    }
+
+    // Foam flecks scattered near the streaks, deterministic per frame.
+    const rng = mulberry32(0xf10a + f * 977)
+    for (let i = 0; i < foamCount; i++) {
+      const spec = specs[i % specs.length]
+      const baseX = Math.round(size * spec.base)
+      const fx = clampNumber(baseX + Math.round((rng() - 0.5) * 6), 1, size - 2)
+      const fy = clampNumber(2 + Math.round(rng() * (size - 5)), 1, size - 2)
+      rows[fy][fx] = 'f'
+    }
+    frames.push(rowsToFrame(rows, palette))
+  }
+  return spriteOf(frames)
+}
+
+/**
+ * The open sea's lazy swell: two wide, slow arcs per frame and a few soft
+ * foam crest flecks. Four frames at a long cadence, so the sea rolls rather
+ * than flickers. The overlay is mostly transparent; the static water base
+ * and its shoreline bands show through.
+ */
+function buildSeaSwell(size: number): RasterSprite {
+  const palette = {
+    b: 'rgba(40, 97, 143, 0.18)',   // calm base wash
+    w: 'rgba(174, 232, 242, 0.16)', // wide wash
+    s: 'rgba(214, 248, 255, 0.28)', // swell crest
+    f: 'rgba(240, 255, 255, 0.42)'  // foam fleck
+  }
+  const frames: RasterFrame[] = []
+  for (let f = 0; f < 4; f++) {
+    const rows = emptyRows(size, size)
+    // A low-alpha wash mutes the base tile's diagonal texture, so the sea
+    // reads as open water rather than a repeating pattern.
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) rows[y][x] = 'b'
+    }
+    // Two wide arcs, rolling north a pixel or two per frame.
+    for (let i = 0; i < 2; i++) {
+      const baseY = Math.round(size * (0.3 + i * 0.34)) - f
+      const phase = f * 0.9 + i * 2.4
+      for (let x = 1; x < size - 1; x++) {
+        const y = baseY + Math.round(Math.sin((x / size) * Math.PI * 2 + phase) * 1.6)
+        if (y < 1 || y >= size - 1) continue
+        rows[y][x] = (x + f) % 7 === 0 ? 'f' : 's'
+        if (y + 1 < size - 1) rows[y + 1][x] = 'w'
+      }
+    }
+    // Sparse foam crest flecks: 2px dashes that drift a few pixels.
+    const flecks: ReadonlyArray<readonly [number, number]> = [
+      [Math.round(size * 0.18) + f * 2, Math.round(size * 0.26)],
+      [Math.round(size * 0.58) - f, Math.round(size * 0.62)],
+      [Math.round(size * 0.82) + f, Math.round(size * 0.44)]
+    ]
+    for (const [fx, fy] of flecks) {
+      for (let dx = 0; dx < 2; dx++) {
+        const x = clampNumber(fx + dx, 1, size - 2)
+        const y = clampNumber(fy, 1, size - 2)
+        rows[y][x] = dx === 0 ? 'f' : 's'
+      }
+    }
+    frames.push(rowsToFrame(rows, palette))
+  }
+  return spriteOf(frames, 2400)
 }
 
 /* ------------------------------------------------------------------ */
@@ -1072,6 +2018,11 @@ export class WorldRenderer {
   private readonly worldHeight: number
   private readonly worldPxWidth: number
   private readonly worldPxHeight: number
+  /** Rows that are mostly water: the open sea, excluded from river flow. */
+  private readonly seaRows: ReadonlySet<number>
+  /** Water tiles per map row and column, for channel-mouth corner detection. */
+  private readonly rowWaterCounts: readonly number[]
+  private readonly columnWaterCounts: readonly number[]
   /** Pixel scale from sprite-bank space to world space (bank 16px -> 32px world = 2). */
   private readonly spriteScale: number
   private readonly cullMargin: number
@@ -1085,6 +2036,7 @@ export class WorldRenderer {
   private readonly edgeCache = new Map<string, RasterSprite | null>()
   private readonly propCache = new Map<string, RasterSprite>()
   private readonly playerCache = new Map<PlayerDirection, RasterSprite>()
+  private readonly catCache = new Map<string, RasterSprite>()
   private readonly overlayCache = new Map<string, RasterSprite>()
   /** Swim rings per fish anchor tile, so each fish loops the water it was placed in. */
   private readonly pondRingCache = new Map<number, { path: PondWaypoint[]; cx: number; cy: number }>()
@@ -1104,6 +2056,25 @@ export class WorldRenderer {
     this.worldPxWidth = this.worldWidth * this.tileSize
     this.worldPxHeight = this.worldHeight * this.tileSize
     this.cullMargin = Math.max(64, this.tileSize * 2)
+
+    // A row that is mostly water is the open sea, not the river; the flow
+    // garnish stays off it so the sea keeps its own calm surface. The same
+    // pass caches per-row and per-column water counts for channel mouths.
+    const seaRows = new Set<number>()
+    const rowWaterCounts = new Array<number>(this.worldHeight).fill(0)
+    const columnWaterCounts = new Array<number>(this.worldWidth).fill(0)
+    for (let y = 0; y < this.worldHeight; y++) {
+      const row = worldMap.ground[y] ?? ''
+      for (let x = 0; x < this.worldWidth; x++) {
+        if (!isWaterChar(row.charAt(x))) continue
+        rowWaterCounts[y]++
+        columnWaterCounts[x]++
+      }
+      if (rowWaterCounts[y] >= this.worldWidth * 0.7) seaRows.add(y)
+    }
+    this.seaRows = seaRows
+    this.rowWaterCounts = rowWaterCounts
+    this.columnWaterCounts = columnWaterCounts
 
     // The grass tile defines the sprite bank's native pixel size; everything
     // rasterized is scaled from that into world space.
@@ -1134,7 +2105,7 @@ export class WorldRenderer {
         continue
       }
       if (BUG_TYPES.has(object.type)) {
-        bugs.push(this.buildButterflyMotion(object, footW, footH, hash))
+        bugs.push(this.buildButterflyMotion(object, hash))
         continue
       }
       // A fence or gate on a vertical run needs its vertical sprite; a
@@ -1229,7 +2200,7 @@ export class WorldRenderer {
     // drawn upright in screen space, their feet projected onto this tilt.
     ctx.setTransform(1, 0, SHEAR_PX_PER_TILE / this.tileSize, ROW_COMPRESS, 0, 0)
 
-    this.drawGround(ctx, camX, camY)
+    this.drawGround(ctx, camX, camY, time)
 
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     this.drawLandmarkGlow(ctx, state.activeLandmarkId, camX, camY, time)
@@ -1328,21 +2299,29 @@ export class WorldRenderer {
     return normalizeSprite(bank[key])
   }
 
-  private drawGround(ctx: CanvasRenderingContext2D, camX: number, camY: number): void {
+  private drawGround(ctx: CanvasRenderingContext2D, camX: number, camY: number, time: number): void {
     const ts = this.tileSize
-    const startX = Math.max(0, Math.floor(camX / ts))
-    const startY = Math.max(0, Math.floor(camY / ts))
-    // The tilt stretches world pixels across the view, so cover the extra reach.
     const rowsVisible = this.viewHeight / ROW_COMPRESS / ts + 2
-    const endX = Math.min(this.worldWidth, Math.ceil((camX + this.viewWidth + SHEAR_PX_PER_TILE * rowsVisible) / ts) + 1)
-    const endY = Math.min(this.worldHeight, Math.ceil((camY + this.viewHeight / ROW_COMPRESS) / ts) + 1)
+    // The shear pushes lower rows right, so the left edge needs the same
+    // reach as the right. A two-tile margin past that reach lets the map
+    // bleed into the shear wedges instead of showing flat clear-rect fill.
+    const shearTiles = Math.ceil((SHEAR_PX_PER_TILE * rowsVisible) / ts)
+    const margin = 2
+    const startX = Math.floor(camX / ts) - shearTiles - margin
+    const startY = Math.floor(camY / ts) - margin
+    const endX = Math.ceil((camX + this.viewWidth + SHEAR_PX_PER_TILE * rowsVisible) / ts) + 1 + margin
+    const endY = Math.ceil((camY + this.viewHeight / ROW_COMPRESS) / ts) + 1 + margin
 
     for (let ty = startY; ty < endY; ty++) {
-      const row = worldMap.ground[ty]
+      // Outside the map, sample the nearest edge row/column and draw that
+      // tile's art at the real screen position, so the border bleeds.
+      const sampleY = clampNumber(ty, 0, this.worldHeight - 1)
+      const row = worldMap.ground[sampleY]
       for (let tx = startX; tx < endX; tx++) {
-        const char = row?.charAt(tx) ?? '.'
+        const sampleX = clampNumber(tx, 0, this.worldWidth - 1)
+        const char = row?.charAt(sampleX) ?? '.'
         const style = this.groundStyle(char)
-        const hash = hashCoordinates(tx, ty, char.charCodeAt(0) * 17 + 3)
+        const hash = hashCoordinates(sampleX, sampleY, char.charCodeAt(0) * 17 + 3)
         const sx = tx * ts - camX
         const sy = ty * ts - camY
         const sprite = style.variants[hash % style.variants.length]
@@ -1361,19 +2340,88 @@ export class WorldRenderer {
         const canvas = this.frameCanvas('terrain', char, sprite, frame)
         if (canvas) ctx.drawImage(canvas, sx, sy)
 
+        // Shoreline and cliff treatments only make sense inside the map;
+        // the bleed margin is the edge tile's base art.
+        const inMap = tx >= 0 && ty >= 0 && tx < this.worldWidth && ty < this.worldHeight
         if (style.kind === 'grass') this.drawGrassLife(ctx, sx, sy, hash)
-        else if (style.kind === 'water') {
+        else if (style.kind === 'water' && inMap) {
           this.drawWaterEdges(ctx, tx, ty, camX, camY)
-          // A bridge tile is river water wearing a deck: the base and the
-          // shoreline overlays land first, then the timber rides on top.
+          // A bridge, dam or arch tile is river water wearing a structure:
+          // the base and shoreline overlays land first, then the stone or
+          // timber rides on top.
           if (char === BRIDGE_CHAR) {
-            const deck = this.overlaySprite('bridgeDeck', () => buildBridgeDeck(this.nativeTile()))
-            const deckCanvas = this.frameCanvas('overlay', 'bridgeDeck', deck, 0)
+            const westBridge = this.groundChar(tx - 1, ty) === BRIDGE_CHAR
+            const eastBridge = this.groundChar(tx + 1, ty) === BRIDGE_CHAR
+            const single = !westBridge && !eastBridge
+            const key = single ? 'bridgeDeckSingle' : 'bridgeDeck'
+            const deck = this.overlaySprite(key, () => buildBridgeDeckFrames(this.nativeTile(), single))
+            // A paired deck composes left to right: a deck with another deck
+            // to its west is the east half, everything else the west half.
+            const half = westBridge ? 1 : 0
+            const deckCanvas = this.frameCanvas('overlay', key, deck, single ? 0 : half)
             if (deckCanvas) ctx.drawImage(deckCanvas, sx, sy)
+          } else if (char === DAM_CHAR) {
+            const layout = damLayout(this.nativeTile())
+            const dam = this.overlaySprite('dam', () => buildDamFrames(this.nativeTile()))
+            const half = this.groundChar(tx - 1, ty) === DAM_CHAR ? 1 : 0
+            const damCanvas = this.frameCanvas('overlay', 'dam', dam, half)
+            // The dam frame is taller than its tile: lift it so its bottom
+            // stays on the tile bottom and its crest rises above the bank.
+            const rise = layout.rise * this.spriteScale
+            if (damCanvas) ctx.drawImage(damCanvas, sx, sy - rise)
+            // The cascade sheets over the crest's downstream edge and down
+            // the face into the foam churn at its foot. Both halves share
+            // one frame so the pair reads as a single fall.
+            const key = `damSpill:${half}`
+            const spill = this.overlaySprite(key, () => buildDamSpillFrames(this.nativeTile(), half))
+            const spillFrame = hashCoordinates(tx - half, ty, 0xd4a3) % spill.frames.length
+            const spillCanvas = this.frameCanvas('overlay', key, spill, spillFrame)
+            if (spillCanvas) {
+              ctx.drawImage(spillCanvas, sx, sy - rise + layout.crestEdge * this.spriteScale)
+            }
+          } else if (char === ARCH_CHAR) {
+            const arch = this.overlaySprite('arch', () => buildArchFrames(this.nativeTile()))
+            const half = this.groundChar(tx - 1, ty) === ARCH_CHAR ? 1 : 0
+            const archCanvas = this.frameCanvas('overlay', 'arch', arch, half)
+            if (archCanvas) ctx.drawImage(archCanvas, sx, sy)
+          } else {
+            // The open sea gets its own lazy swell: wide arcs and sparse
+            // foam, animated only in this overlay. The water base stays
+            // static, so the ground plane never moves.
+            if (this.seaRows.has(ty)) {
+              const swell = this.overlaySprite('seaSwell', () => buildSeaSwell(this.nativeTile()))
+              const swellFrame = (Math.floor(time / 2400) + hash) % swell.frames.length
+              const swellCanvas = this.frameCanvas('overlay', 'seaSwell', swell, swellFrame)
+              if (swellCanvas) ctx.drawImage(swellCanvas, sx, sy)
+              // The river mouth gets a delta overlay on top of the swell:
+              // a shallows tint and foam arcs curling into the sea.
+              if (this.isMouthTile(tx, ty)) {
+                const variant = this.mouthVariant(tx, ty)
+                const key = `mouthDelta:${variant}`
+                const delta = this.overlaySprite(key, () => buildMouthDelta(this.nativeTile(), variant))
+                const deltaCanvas = this.frameCanvas('overlay', key, delta, 0)
+                if (deltaCanvas) ctx.drawImage(deltaCanvas, sx, sy)
+              }
+            } else {
+              // Static current garnish on river and pool tiles; the frame is
+              // hash-chosen per tile, so the pattern varies but never moves.
+              const variant = this.riverFlowVariant(tx, ty)
+              if (variant) {
+                const key = `riverFlow:${variant.bend}:${variant.calm ? 'c' : 'n'}`
+                const flow = this.overlaySprite(key, () =>
+                  buildRiverFlow(this.nativeTile(), variant.bend, variant.calm)
+                )
+                const flowCanvas = this.frameCanvas('overlay', key, flow, hash % flow.frames.length)
+                if (flowCanvas) ctx.drawImage(flowCanvas, sx, sy)
+              }
+            }
           }
-        } else if (style.kind === 'cliff') this.drawCliffDepth(ctx, tx, ty, sx, sy)
+          // Reeds, foam and stones break the long waterlines.
+          this.drawShoreGarnish(ctx, tx, ty, sx, sy)
+        } else if (style.kind === 'cliff' && inMap) this.drawCliffDepth(ctx, tx, ty, sx, sy)
+        else if (style.kind === 'sand' && inMap) this.drawLandShoreGarnish(ctx, tx, ty, sx, sy)
         // A cliff casts a soft shadow onto whatever ground lies below it.
-        if (style.kind !== 'cliff' && this.groundChar(tx, ty - 1) === CLIFF_CHAR) {
+        if (inMap && style.kind !== 'cliff' && this.groundChar(tx, ty - 1) === CLIFF_CHAR) {
           const cast = this.overlaySprite('cliffCast', () => buildCliffCastShadow(this.nativeTile()))
           const canvas = this.frameCanvas('overlay', 'cliffCast', cast, 0)
           if (canvas) ctx.drawImage(canvas, sx, sy)
@@ -1444,6 +2492,22 @@ export class WorldRenderer {
       const canvas = this.frameCanvas('overlay', id, sprite, 0)
       if (canvas) ctx.drawImage(canvas, sx, sy)
     }
+    // A foam arc over the bank corner rounds the junction instead of
+    // leaving a hard 90-degree pinch, especially at sea corners and bends.
+    const softCorner = (id: CornerId): void => {
+      const key = `softCorner:${id}`
+      const sprite = this.overlaySprite(key, () => buildSoftCorner(n, id))
+      const canvas = this.frameCanvas('overlay', key, sprite, 0)
+      if (canvas) ctx.drawImage(canvas, sx, sy)
+    }
+    // A wide, soft sand band replaces the bank's hard edge band on sand
+    // seams, so the beach fades into the water without speckles.
+    const sandBand = (side: ShoreSide): void => {
+      const key = `sandBand:${side}`
+      const sprite = this.overlaySprite(key, () => buildSandShoreBand(n, side))
+      const canvas = this.frameCanvas('overlay', key, sprite, 0)
+      if (canvas) ctx.drawImage(canvas, sx, sy)
+    }
 
     // Shore bands vary per tile (the art carries a second foam frame) and
     // the waterline itself wobbles a pixel or two in and out of the bank,
@@ -1462,14 +2526,31 @@ export class WorldRenderer {
       else if (name === 'waterEdgeW') ctx.drawImage(canvas, sx + inset, sy)
       else ctx.drawImage(canvas, sx - inset, sy)
     }
-    if (!north) drawBand('waterEdgeN')
-    if (!south) drawBand('waterEdgeS')
-    if (!west) drawBand('waterEdgeW')
-    if (!east) drawBand('waterEdgeE')
+    const northChar = this.groundChar(tx, ty - 1)
+    const southChar = this.groundChar(tx, ty + 1)
+    const westChar = this.groundChar(tx - 1, ty)
+    const eastChar = this.groundChar(tx + 1, ty)
+    if (!north) {
+      if (northChar === 's') sandBand('n')
+      else drawBand('waterEdgeN')
+    }
+    if (!south) {
+      if (southChar === 's') sandBand('s')
+      else drawBand('waterEdgeS')
+    }
+    if (!west) {
+      if (westChar === 's') sandBand('w')
+      else drawBand('waterEdgeW')
+    }
+    if (!east) {
+      if (eastChar === 's') sandBand('e')
+      else drawBand('waterEdgeE')
+    }
 
     // A north bank reads as sunken: inner wall face plus a vertical smear
-    // of the rim reflecting into the water below it.
-    if (!north) {
+    // of the rim reflecting into the water below it. A sand beach is a
+    // gentle slope, not a sunken wall, so it gets the soft sand band instead.
+    if (!north && northChar !== 's') {
       const face = this.overlaySprite('waterInnerFace', () => buildWaterInnerFace(n))
       drawOverlayFrame('waterInnerFace', face, tileHash % face.frames.length)
       const smear = this.overlaySprite('waterSmear', () => buildWaterSmear(n))
@@ -1477,15 +2558,271 @@ export class WorldRenderer {
     }
 
     // Inner corners: two land edges meet and pinch the shore.
-    if (!north && !west) corner('waterCornerNW')
-    if (!north && !east) corner('waterCornerNE')
-    if (!south && !west) corner('waterCornerSW')
-    if (!south && !east) corner('waterCornerSE')
+    if (!north && !west) {
+      corner('waterCornerNW')
+      softCorner('nw')
+    }
+    if (!north && !east) {
+      corner('waterCornerNE')
+      softCorner('ne')
+    }
+    if (!south && !west) {
+      corner('waterCornerSW')
+      softCorner('sw')
+    }
+    if (!south && !east) {
+      corner('waterCornerSE')
+      softCorner('se')
+    }
     // Outer corners: the diagonal is land while both orthogonal sides are water.
-    if (north && west && !isWaterChar(this.groundChar(tx - 1, ty - 1))) corner('waterNotchNW')
-    if (north && east && !isWaterChar(this.groundChar(tx + 1, ty - 1))) corner('waterNotchNE')
-    if (south && west && !isWaterChar(this.groundChar(tx - 1, ty + 1))) corner('waterNotchSW')
-    if (south && east && !isWaterChar(this.groundChar(tx + 1, ty + 1))) corner('waterNotchSE')
+    if (north && west && !isWaterChar(this.groundChar(tx - 1, ty - 1))) {
+      corner('waterNotchNW')
+      softCorner('nw')
+    }
+    if (north && east && !isWaterChar(this.groundChar(tx + 1, ty - 1))) {
+      corner('waterNotchNE')
+      softCorner('ne')
+    }
+    if (south && west && !isWaterChar(this.groundChar(tx - 1, ty + 1))) {
+      corner('waterNotchSW')
+      softCorner('sw')
+    }
+    if (south && east && !isWaterChar(this.groundChar(tx + 1, ty + 1))) {
+      corner('waterNotchSE')
+      softCorner('se')
+    }
+
+    // Mouth lips: where the sand shore meets the river mouth, round the
+    // corner so the delta has soft lips instead of a right-angle T.
+    const neDiag = this.groundChar(tx + 1, ty - 1)
+    const nwDiag = this.groundChar(tx - 1, ty - 1)
+    if (!north && east && isWaterChar(neDiag) && !this.seaRows.has(ty - 1)) softCorner('ne')
+    if (!north && west && isWaterChar(nwDiag) && !this.seaRows.has(ty - 1)) softCorner('nw')
+
+    // Wide non-sea water bodies (the mountain lake and pond) get a soft
+    // corner at both ends of every land side, so the rim reads organic
+    // instead of a tile staircase.
+    if (this.isWideWater(tx, ty)) {
+      if (!north) {
+        softCorner('nw')
+        softCorner('ne')
+      }
+      if (!south) {
+        softCorner('sw')
+        softCorner('se')
+      }
+      if (!west) {
+        softCorner('nw')
+        softCorner('sw')
+      }
+      if (!east) {
+        softCorner('ne')
+        softCorner('se')
+      }
+    }
+
+    // Channel mouths: where a narrow run meets a wider body, round the two
+    // land-side corners so the river mouth, lake inlet and pond outlet never
+    // leave a right-angle step at the seam.
+    const rowWater = this.waterInRow(ty)
+    if (north && south && this.waterInRow(ty - 1) >= rowWater + 3) {
+      if (!west) softCorner('nw')
+      if (!east) softCorner('ne')
+    }
+    if (north && south && this.waterInRow(ty + 1) >= rowWater + 3) {
+      if (!west) softCorner('sw')
+      if (!east) softCorner('se')
+    }
+    if (west && east) {
+      const colWater = this.waterInColumn(tx)
+      if (this.waterInColumn(tx - 1) >= colWater + 3) {
+        if (!north) softCorner('nw')
+        if (!south) softCorner('sw')
+      }
+      if (this.waterInColumn(tx + 1) >= colWater + 3) {
+        if (!north) softCorner('ne')
+        if (!south) softCorner('se')
+      }
+    }
+    // The dam's foot is a hard stone lip; a foam arc at each corner blends
+    // the spill into the river below it.
+    if (northChar === DAM_CHAR) {
+      softCorner('nw')
+      softCorner('ne')
+    }
+  }
+
+  /**
+   * A water tile in a narrow north-south channel: water or bridge above and
+   * below, and land pressing in from one side. This selects the river run
+   * (including the mouth) while leaving the open sea alone. Tiles outside
+   * the map do not count as land, so the sea's outer columns stay clear.
+   */
+  private isNarrowChannel(tx: number, ty: number): boolean {
+    const north = isWaterChar(this.groundChar(tx, ty - 1))
+    const south = isWaterChar(this.groundChar(tx, ty + 1))
+    const westLand = this.isLandTile(tx - 1, ty)
+    const eastLand = this.isLandTile(tx + 1, ty)
+    return north && south && (westLand || eastLand)
+  }
+
+  private isLandTile(tx: number, ty: number): boolean {
+    if (tx < 0 || ty < 0 || tx >= this.worldWidth || ty >= this.worldHeight) return false
+    return !isWaterChar(this.groundChar(tx, ty))
+  }
+
+  /** A wide, non-sea water body: the mountain lake, the pond, a broad pool. */
+  private isWideWater(tx: number, ty: number): boolean {
+    if (!isWaterChar(this.groundChar(tx, ty))) return false
+    if (this.seaRows.has(ty)) return false
+    let count = 0
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        if (isWaterChar(this.groundChar(tx + dx, ty + dy))) count++
+      }
+    }
+    return count >= 14
+  }
+
+  /** A sea tile at the river mouth: river water above, sea water here. */
+  private isMouthTile(tx: number, ty: number): boolean {
+    if (!this.seaRows.has(ty)) return false
+    if (this.seaRows.has(ty - 1)) return false
+    const north = this.groundChar(tx, ty - 1)
+    const nw = this.groundChar(tx - 1, ty - 1)
+    const ne = this.groundChar(tx + 1, ty - 1)
+    return isWaterChar(north) || isWaterChar(nw) || isWaterChar(ne)
+  }
+
+  /** Which side of the mouth a sea tile sits on, for the delta foam arcs. */
+  private mouthVariant(tx: number, ty: number): MouthVariant {
+    const nwLand = this.isLandTile(tx - 1, ty - 1)
+    const neLand = this.isLandTile(tx + 1, ty - 1)
+    if (nwLand && !neLand) return 'left'
+    if (neLand && !nwLand) return 'right'
+    return 'middle'
+  }
+
+  /** Water tiles in one map row, used to spot a channel widening into a body. */
+  private waterInRow(ty: number): number {
+    return this.rowWaterCounts[ty] ?? 0
+  }
+
+  /** Water tiles in one map column, for east-west channel mouths. */
+  private waterInColumn(tx: number): number {
+    return this.columnWaterCounts[tx] ?? 0
+  }
+
+  /**
+   * The flow variant for a river or pool tile: `bend` curves the streaks
+   * toward the open water beside a bank, `calm` thins them for the widened
+   * pool. The open sea is excluded by its mostly-water rows.
+   */
+  private riverFlowVariant(tx: number, ty: number): { bend: number; calm: boolean } | null {
+    if (this.seaRows.has(ty)) return null
+    const north = isWaterChar(this.groundChar(tx, ty - 1))
+    const south = isWaterChar(this.groundChar(tx, ty + 1))
+    const west = isWaterChar(this.groundChar(tx - 1, ty))
+    const east = isWaterChar(this.groundChar(tx + 1, ty))
+    const waterCount = (north ? 1 : 0) + (south ? 1 : 0) + (west ? 1 : 0) + (east ? 1 : 0)
+    if (waterCount < 2) return null
+    const westLand = this.isLandTile(tx - 1, ty)
+    const eastLand = this.isLandTile(tx + 1, ty)
+    const bend = westLand && !eastLand ? 1 : eastLand && !westLand ? -1 : 0
+    return { bend, calm: waterCount >= 3 }
+  }
+
+  /**
+   * Hash-gated shore garnish on plain water tiles: reeds over grass banks,
+   * foam arcs over sand banks, and the occasional stone. This breaks the
+   * long hard waterline along the sea and the meandering riverbanks.
+   */
+  private drawShoreGarnish(
+    ctx: CanvasRenderingContext2D,
+    tx: number,
+    ty: number,
+    sx: number,
+    sy: number
+  ): void {
+    if (this.groundChar(tx, ty) !== WATER_CHAR) return
+    const sides: Array<{ side: ShoreSide; land: string }> = []
+    const north = this.groundChar(tx, ty - 1)
+    const south = this.groundChar(tx, ty + 1)
+    const west = this.groundChar(tx - 1, ty)
+    const east = this.groundChar(tx + 1, ty)
+    if (!isWaterChar(north)) sides.push({ side: 'n', land: north })
+    if (!isWaterChar(south)) sides.push({ side: 's', land: south })
+    if (!isWaterChar(west)) sides.push({ side: 'w', land: west })
+    if (!isWaterChar(east)) sides.push({ side: 'e', land: east })
+    // Small enclosed bodies (the mountain lake and pond) get a denser
+    // reed/foam rim so their shore reads organic rather than tiled.
+    const wide = this.isWideWater(tx, ty)
+    const garnishGate = wide ? 2 : 4
+    for (const { side, land } of sides) {
+      const sideHash = hashCoordinates(tx, ty, side.charCodeAt(0) * 31 + 7)
+      const isSand = land === 's'
+      const isGrass = land === '.' || land === 'f' || land === 't'
+      const isDam = land === 'D'
+      // Shift toward the bank so reeds and foam overlap the land's own
+      // dark edge, not just the water side of the seam. Foam reaches two
+      // pixels in because the sand tile's bottom edge is two rows deep.
+      const dx = side === 'w' ? -1 : side === 'e' ? 1 : 0
+      const dy = side === 'n' ? -1 : side === 's' ? 1 : 0
+      const fdx = side === 'w' ? -2 : side === 'e' ? 2 : 0
+      const fdy = side === 'n' ? -2 : side === 's' ? 2 : 0
+      if (isGrass && sideHash % garnishGate === 0) {
+        const key = `shoreReeds:${side}`
+        const sprite = this.overlaySprite(key, () => buildShoreReeds(this.nativeTile(), side))
+        const canvas = this.frameCanvas('overlay', key, sprite, 0)
+        if (canvas) ctx.drawImage(canvas, sx + dx, sy + dy)
+      } else if (isSand && sideHash % garnishGate === 0) {
+        const key = `shoreFoam:${side}`
+        const sprite = this.overlaySprite(key, () => buildShoreFoam(this.nativeTile(), side))
+        const canvas = this.frameCanvas('overlay', key, sprite, 0)
+        if (canvas) ctx.drawImage(canvas, sx + fdx, sy + fdy)
+      } else if (isDam) {
+        // The dam's foot is a stone lip; a soft foam lip blends the spill
+        // into the river without a hard horizontal seam.
+        const key = `shoreFoam:${side}`
+        const sprite = this.overlaySprite(key, () => buildShoreFoam(this.nativeTile(), side))
+        const canvas = this.frameCanvas('overlay', key, sprite, 0)
+        if (canvas) ctx.drawImage(canvas, sx + fdx, sy + fdy)
+      }
+      if (sideHash % 13 === 0) {
+        const key = `shoreStone:${side}`
+        const sprite = this.overlaySprite(key, () => buildShoreStone(this.nativeTile(), side))
+        const canvas = this.frameCanvas('overlay', key, sprite, 0)
+        if (canvas) ctx.drawImage(canvas, sx + dx, sy + dy)
+      }
+    }
+  }
+
+  /**
+   * Foam wash on the land side of a sand/water seam. The sand tile's own
+   * bottom edge is the dark line the user sees; drawing the wash here
+   * covers it instead of only painting the water side.
+   */
+  private drawLandShoreGarnish(
+    ctx: CanvasRenderingContext2D,
+    tx: number,
+    ty: number,
+    sx: number,
+    sy: number
+  ): void {
+    if (this.groundChar(tx, ty) !== 's') return
+    const sides: ShoreSide[] = []
+    if (isWaterChar(this.groundChar(tx, ty - 1))) sides.push('n')
+    if (isWaterChar(this.groundChar(tx, ty + 1))) sides.push('s')
+    if (isWaterChar(this.groundChar(tx - 1, ty))) sides.push('w')
+    if (isWaterChar(this.groundChar(tx + 1, ty))) sides.push('e')
+    for (const side of sides) {
+      const sideHash = hashCoordinates(tx, ty, side.charCodeAt(0) * 53 + 11)
+      if (sideHash % 3 !== 0) continue
+      const key = `shoreFoamLand:${side}`
+      const sprite = this.overlaySprite(key, () => buildShoreFoam(this.nativeTile(), side))
+      const canvas = this.frameCanvas('overlay', key, sprite, 0)
+      if (canvas) ctx.drawImage(canvas, sx, sy)
+    }
   }
 
   /** Lazily build (once) and cache a procedural overlay sprite by key. */
@@ -1539,14 +2876,14 @@ export class WorldRenderer {
   ): { ids: number[]; minX: number; minY: number; maxX: number; maxY: number } | null {
     let originX = -1
     let originY = -1
-    if (this.groundChar(startX, startY) === WATER_CHAR) {
+    if (isWaterChar(this.groundChar(startX, startY))) {
       originX = startX
       originY = startY
     } else {
       for (let radius = 1; radius <= 8 && originX < 0; radius++) {
         for (let dy = -radius; dy <= radius && originX < 0; dy++) {
           for (let dx = -radius; dx <= radius; dx++) {
-            if (this.groundChar(startX + dx, startY + dy) === WATER_CHAR) {
+            if (isWaterChar(this.groundChar(startX + dx, startY + dy))) {
               originX = startX + dx
               originY = startY + dy
               break
@@ -1581,7 +2918,7 @@ export class WorldRenderer {
       for (const [nx, ny] of neighbors) {
         if (nx < 0 || ny < 0 || nx >= this.worldWidth || ny >= this.worldHeight) continue
         const id = ny * this.worldWidth + nx
-        if (seen.has(id) || this.groundChar(nx, ny) !== WATER_CHAR) continue
+        if (seen.has(id) || !isWaterChar(this.groundChar(nx, ny))) continue
         seen.add(id)
         queue.push([nx, ny])
       }
@@ -1687,35 +3024,49 @@ export class WorldRenderer {
     }
   }
 
+  /**
+   * A flyer's route: 5-8 tile-centre waypoints spread around the map on a
+   * hash-rotated ellipse, with per-waypoint radius and angle jitter so two
+   * flyers rarely share a loop. Flyers are above the scene, so any tile is
+   * fair game - water, cliffs and roofs included.
+   */
   private buildButterflyMotion(
     object: { type: string; x: number; y: number },
-    footW: number,
-    footH: number,
     hash: number
   ): ButterflyMotion {
     const ts = this.tileSize
-    const inset = Math.max(2, Math.round(ts * 0.12))
-    const left = object.x * ts
-    const top = object.y * ts
+    const count = 5 + (hash % 4)
+    const baseAngle = (hash % 6283) / 1000
+    const cx = this.worldWidth / 2
+    const cy = this.worldHeight / 2
+    const path: PondWaypoint[] = []
+    for (let i = 0; i < count; i++) {
+      // A different salt per waypoint keeps the route from collapsing into
+      // a regular polygon; the rotation spreads flyers apart.
+      const h = hashCoordinates(object.x + i * 13, object.y - i * 7, hash ^ Math.imul(i + 1, 0x9e3779b1))
+      const angle = baseAngle + (i / count) * Math.PI * 2 + ((h % 100) / 100) * 0.35
+      const rx = (this.worldWidth / 2) * (0.42 + ((h >>> 8) % 56) / 100)
+      const ry = (this.worldHeight / 2) * (0.42 + ((h >>> 16) % 56) / 100)
+      const tx = clampNumber(Math.round(cx + Math.cos(angle) * rx), 0, this.worldWidth - 1)
+      const ty = clampNumber(Math.round(cy + Math.sin(angle) * ry), 0, this.worldHeight - 1)
+      path.push({ x: tx * ts + ts / 2, y: ty * ts + ts / 2 })
+    }
+    const pace = FLYER_PACE[object.type] ?? DEFAULT_FLYER_PACE
     return {
       key: `${object.type}:${object.x}:${object.y}`,
       sprite: this.propSprite(object.type),
-      ax: left + (footW * ts) / 2,
-      ay: top + (footH * ts) / 2,
-      ampX: ts * 0.3 + (hash % Math.max(1, Math.round(ts / 8))),
-      ampY: ts * 0.2 + (hash % Math.max(1, Math.round(ts / 12))),
-      // Long, lazy periods: a bug drifts across its tile over ten seconds
-      // or more, never zipping or jittering.
-      freqX: (Math.PI * 2) / (9200 + (hash % 3600)),
-      freqY: (Math.PI * 2) / (7400 + (hash % 2900)),
-      phase: (hash % 6283) / 1000,
-      phase2: ((hash >>> 8) % 6283) / 1000,
-      // The wander box is the anchor tile itself, inset a little, so the
-      // bug always hovers over the ground it belongs to.
-      minX: left + inset,
-      maxX: left + footW * ts - inset,
-      minY: top + inset,
-      maxY: top + footH * ts - inset
+      path,
+      // A full circuit takes a couple of lazy minutes, not half a minute.
+      // The species pace stretches or squeezes that calm base.
+      loopMs: (96000 + (hash % 72000)) * pace.loop,
+      phase: (hash % 997) / 997,
+      // A gentle 1-2px drift over many seconds, so the route never reads
+      // as a rigid rail and never buzzes.
+      ampX: (1 + (hash % 2)) * pace.amp,
+      ampY: (1 + ((hash >>> 4) % 2)) * pace.amp,
+      freqX: ((Math.PI * 2) / (14000 + (hash % 6000))) * pace.freq,
+      freqY: ((Math.PI * 2) / (12000 + (hash % 5000))) * pace.freq,
+      phase2: ((hash >>> 8) % 6283) / 1000
     }
   }
 
@@ -1762,6 +3113,22 @@ export class WorldRenderer {
     if (direction === 'right' && raw === side) sprite = mirrorSprite(sprite)
     this.playerCache.set(direction, sprite)
     return sprite
+  }
+
+  /** The companion's sprite set for a pose; bank art is normalized once. */
+  private catSprite(kind: 'walk' | 'sit' | 'stare'): RasterSprite {
+    const cached = this.catCache.get(kind)
+    if (cached) return cached
+    const sprite =
+      normalizeSprite(catSprites[kind]) ?? makePlaceholderSprite(this.nativeTile(), '#c97a3a', '#f2e2c4')
+    this.catCache.set(kind, sprite)
+    return sprite
+  }
+
+  /** Walk frames while moving; sit or stare frames while idle. */
+  private catKind(companion: RenderCompanionState): 'walk' | 'sit' | 'stare' {
+    if (companion.moving) return 'walk'
+    return companion.staring ? 'stare' : 'sit'
   }
 
   /** Rasterize a frame into a cached, scaled offscreen canvas; the only per-pixel path. */
@@ -1861,11 +3228,23 @@ export class WorldRenderer {
       this.drawStructureShadow(ctx, cx, cy, entry.width, entry.type)
     }
     const px = this.projectX(state.player.x, state.player.y, camX, camY)
-    const py = this.projectY(state.player.y, camY)
+    const py =
+      this.projectY(state.player.y, camY) + this.structureLiftAt(state.player.x, state.player.y) * ROW_COMPRESS
     if (px >= -this.cullMargin && px <= this.viewWidth + this.cullMargin && py >= -this.cullMargin && py <= this.viewHeight + this.cullMargin) {
       const sprite = this.playerSprite(state.player.direction)
       const base = sprite.frames[0]
       this.drawStructureShadow(ctx, px, py, (base?.width ?? this.tileSize) * this.spriteScale, 'player')
+    }
+    const companion = state.companion
+    if (companion) {
+      const cx = this.projectX(companion.x, companion.y, camX, camY)
+      const cy =
+        this.projectY(companion.y, camY) + this.structureLiftAt(companion.x, companion.y) * ROW_COMPRESS
+      if (cx >= -this.cullMargin && cx <= this.viewWidth + this.cullMargin && cy >= -this.cullMargin && cy <= this.viewHeight + this.cullMargin) {
+        const sprite = this.catSprite(this.catKind(companion))
+        const base = sprite.frames[0]
+        this.drawStructureShadow(ctx, cx, cy, (base?.width ?? this.tileSize) * this.spriteScale, 'cat')
+      }
     }
   }
 
@@ -1873,6 +3252,9 @@ export class WorldRenderer {
   private drawScene(ctx: CanvasRenderingContext2D, state: RenderState, camX: number, camY: number, time: number): void {
     const dynamic: DynamicItem[] = [
       { depth: state.player.y, draw: () => this.drawPlayer(ctx, state, camX, camY) },
+      ...(state.companion
+        ? [{ depth: state.companion.y, draw: () => this.drawCompanion(ctx, state, camX, camY) }]
+        : []),
       ...this.fishMotions.map((motion) => this.fishItem(ctx, motion, camX, camY, time))
     ].sort((a, b) => a.depth - b.depth)
 
@@ -1916,7 +3298,7 @@ export class WorldRenderer {
     py = motion.cy + (py - motion.cy) * motion.ringScale
     // The ring hugs the pond's own shape, but if an eased chord ever clips
     // a sandbar notch, fall back to the waypoint, which is guaranteed water.
-    if (this.groundChar(Math.floor(px / this.tileSize), Math.floor(py / this.tileSize)) !== WATER_CHAR) {
+    if (!isWaterChar(this.groundChar(Math.floor(px / this.tileSize), Math.floor(py / this.tileSize)))) {
       px = from.x
       py = from.y
     }
@@ -1954,13 +3336,24 @@ export class WorldRenderer {
   }
 
   private drawEntry(ctx: CanvasRenderingContext2D, entry: SceneEntry, camX: number, camY: number, time: number): void {
+    // Hens amble a couple of pixels over many seconds, never pecking in a
+    // nervous jitter. This is a draw-time offset only: the footprint, depth
+    // and collision stay put.
+    const shuffleX =
+      entry.type === 'chicken' ? Math.sin(time * 0.00035 + entry.phase * 0.013 + 1.7) * 2 : 0
+    const shuffleY =
+      entry.type === 'chicken' ? Math.sin(time * 0.00028 + entry.phase * 0.019 + 4.2) * 1.5 : 0
     // Feet projected onto the tilted ground; the sprite itself stays upright.
-    const feetX = Math.round(this.projectX(entry.x + entry.width / 2, entry.baseY, camX, camY))
-    const feetY = Math.round(this.projectY(entry.baseY, camY))
+    const feetX = Math.round(this.projectX(entry.x + entry.width / 2, entry.baseY, camX, camY) + shuffleX)
+    const feetY = Math.round(this.projectY(entry.baseY, camY) + shuffleY)
     const sx = Math.round(feetX - entry.width / 2)
     // The art's lowest opaque pixel lands on the base line; any transparent
     // padding under the sprite's feet is drawn away below it.
-    const sy = Math.round(feetY - entry.height + entry.basePad)
+    // The water wheel sits in the river: its paddle arc and foam dip below
+    // the tile-bottom anchor while the hub stays above the waterline. The
+    // shadow still uses entry.baseY, so it stays on the base tile.
+    const sink = entry.type === 'waterWheel' ? WATER_WHEEL_SINK_PX * this.spriteScale : 0
+    const sy = Math.round(feetY - entry.height + entry.basePad + sink)
     if (sx + entry.width < -this.cullMargin || sx > this.viewWidth + this.cullMargin) return
     if (sy + entry.height < -this.cullMargin || sy > this.viewHeight + this.cullMargin) return
     const schedule = this.propSchedule(entry)
@@ -1976,14 +3369,39 @@ export class WorldRenderer {
     // Settled pacing: calm props hold their frames longer than the shared
     // default, so nothing on the farm fidgets.
     const pace = PROP_PACE[entry.type] ?? 1
-    if (sharedKey) {
+    const shared = sharedKey ? WORLD_ANIMATION_SCHEDULES[sharedKey] : undefined
+    if (shared) {
       return {
-        frameCount: Math.min(WORLD_ANIMATION_SCHEDULES[sharedKey].frameCount, Math.max(1, entry.sprite.frames.length)),
-        frameMs: WORLD_ANIMATION_SCHEDULES[sharedKey].frameMs * pace,
-        pingPong: WORLD_ANIMATION_SCHEDULES[sharedKey].pingPong
+        frameCount: Math.min(shared.frameCount, Math.max(1, entry.sprite.frames.length)),
+        frameMs: shared.frameMs * pace,
+        pingPong: shared.pingPong
       }
     }
     return { frameCount: entry.sprite.frames.length, frameMs: entry.sprite.frameMs * pace }
+  }
+
+  /**
+   * How far the player's feet must rise to stand on a raised structure.
+   * The gameplay position stays at the tile base; this is a draw-time lift
+   * that follows the arch curve or the dam's flat crest.
+   */
+  private structureLiftAt(worldX: number, worldY: number): number {
+    const ts = this.tileSize
+    const tx = Math.floor(worldX / ts)
+    const ty = Math.floor(worldY / ts)
+    const char = this.groundChar(tx, ty)
+    if (char === DAM_CHAR) {
+      const layout = damLayout(this.nativeTile())
+      const crestWorld = ty * ts - layout.rise * this.spriteScale + layout.crestTop * this.spriteScale
+      return crestWorld - worldY
+    }
+    if (char !== ARCH_CHAR) return 0
+    const native = this.nativeTile()
+    const localX = clampNumber(worldX - tx * ts, 0, ts - 1)
+    const nx = Math.round((localX / ts) * (native - 1))
+    const half = this.groundChar(tx - 1, ty) === ARCH_CHAR ? 1 : 0
+    const deckTopWorld = archDeckTop(native, half, nx) * this.spriteScale
+    return deckTopWorld - (worldY - ty * ts)
   }
 
   private drawPlayer(ctx: CanvasRenderingContext2D, state: RenderState, camX: number, camY: number): void {
@@ -2001,36 +3419,78 @@ export class WorldRenderer {
     // with any transparent padding under the walk frames drawn away.
     const basePad = frameBottomPad(base) * this.spriteScale
     const feetX = Math.round(this.projectX(state.player.x, state.player.y, camX, camY))
-    const feetY = Math.round(this.projectY(state.player.y, camY))
+    const feetY = Math.round(
+      this.projectY(state.player.y, camY) + this.structureLiftAt(state.player.x, state.player.y) * ROW_COMPRESS
+    )
     ctx.drawImage(canvas, Math.round(feetX - width / 2), Math.round(feetY - height + basePad))
   }
 
-  /** Bugs fly above the sorted scene, wandering lazily inside their anchor tile. */
+  /**
+   * The cat companion, drawn exactly like the player: feet projected onto
+   * the tilted ground, sprite upright, mirrored for rightward travel, and
+   * the art's transparent bottom padding drawn away so her paws land on
+   * the base line.
+   */
+  private drawCompanion(ctx: CanvasRenderingContext2D, state: RenderState, camX: number, camY: number): void {
+    const companion = state.companion
+    if (!companion) return
+    const kind = this.catKind(companion)
+    const sprite = this.catSprite(kind)
+    const count = sprite.frames.length
+    if (count === 0) return
+    const rawFrame = Math.trunc(companion.frame)
+    const frame = ((rawFrame % count) + count) % count
+    const base = sprite.frames[frame]
+    if (!base) return
+    const canvas = this.frameCanvas('cat', kind, sprite, frame, companion.direction === 'right')
+    if (!canvas) return
+    const width = base.width * this.spriteScale
+    const height = base.height * this.spriteScale
+    const basePad = frameBottomPad(base) * this.spriteScale
+    const feetX = Math.round(this.projectX(companion.x, companion.y, camX, camY))
+    const feetY = Math.round(
+      this.projectY(companion.y, camY) + this.structureLiftAt(companion.x, companion.y) * ROW_COMPRESS
+    )
+    ctx.drawImage(canvas, Math.round(feetX - width / 2), Math.round(feetY - height + basePad))
+  }
+
+  /**
+   * Bugs fly above the sorted scene, following long eased waypoint loops
+   * across the map. A small sinusoid rides on the interpolated waypoint so
+   * the flight never reads as a rigid rail; the sprite mirrors with the
+   * east/west leg and keeps the same lazy bob as the fish.
+   */
   private drawButterflies(ctx: CanvasRenderingContext2D, camX: number, camY: number, time: number): void {
     if (this.butterflies.length === 0) return
     const items = this.butterflies
-      .map((motion) => ({
-        motion,
-        y: clampNumber(motion.ay + motion.ampY * Math.sin(time * motion.freqY + motion.phase2), motion.minY, motion.maxY)
-      }))
-      .sort((a, b) => a.y - b.y)
-    for (const { motion } of items) {
-      // The wander box is the anchor tile, so the bug never leaves the
-      // plant, flower or grass it belongs to.
-      const px = clampNumber(
-        motion.ax + motion.ampX * Math.sin(time * motion.freqX + motion.phase),
-        motion.minX,
-        motion.maxX
-      )
-      const py = clampNumber(
-        motion.ay + motion.ampY * Math.sin(time * motion.freqY + motion.phase2),
-        motion.minY,
-        motion.maxY
-      )
+      .map((motion) => {
+        const n = motion.path.length
+        const cycle = (time / motion.loopMs + motion.phase) % 1
+        const step = cycle * n
+        const index = Math.floor(step) % n
+        const nextIndex = (index + 1) % n
+        const frac = step - Math.floor(step)
+        // Smooth in and out of each waypoint, like the fish ring.
+        const ease = frac * frac * (3 - 2 * frac)
+        const from = motion.path[index]
+        const to = motion.path[nextIndex]
+        const px =
+          from.x +
+          (to.x - from.x) * ease +
+          motion.ampX * Math.sin(time * motion.freqX + motion.phase2)
+        const py =
+          from.y +
+          (to.y - from.y) * ease +
+          motion.ampY * Math.sin(time * motion.freqY + motion.phase)
+        return { motion, from, to, px, py }
+      })
+      .sort((a, b) => a.py - b.py)
+    for (const { motion, from, to, px, py } of items) {
       // A slow vertical breathing, not a nervous jitter.
       const bob = Math.sin(time * 0.0012 + motion.phase) * 1.5
-      const mirror = Math.cos(time * motion.freqX + motion.phase) > 0
-      const frame = frameAt(time + motion.phase * 700, this.butterflySchedule)
+      // Sprite faces left; flip it whenever it travels right.
+      const mirror = to.x >= from.x
+      const frame = frameAt(time + motion.phase * 900, this.butterflySchedule)
       const base = motion.sprite.frames[0]
       const width = (base?.width ?? this.tileSize) * this.spriteScale
       const height = (base?.height ?? this.tileSize) * this.spriteScale

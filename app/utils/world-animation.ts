@@ -39,6 +39,8 @@ export type WorldAnimationId =
   | 'pineSway'
   | 'tallGrass'
   | 'playerWalk'
+  | 'windmill'
+  | 'waterWheel'
 
 /**
  * Water shimmer: sixteen frames at 900ms — a slow glassy drift whose full
@@ -104,6 +106,22 @@ export const playerWalkAnimation: AnimationFrameSchedule = {
   frameMs: 130,
 }
 
+/** Windmill sails: four frames at 900ms, a quarter turn every 3.6s. */
+export const windmillAnimation: AnimationFrameSchedule = {
+  id: 'windmill',
+  frameCount: 4,
+  frameMs: 900,
+  pingPong: false,
+}
+
+/** Water wheel: four frames at 900ms, an eighth turn every 3.6s. */
+export const waterWheelAnimation: AnimationFrameSchedule = {
+  id: 'waterWheel',
+  frameCount: 4,
+  frameMs: 900,
+  pingPong: false,
+}
+
 /** Every world schedule, keyed by id; each entry's `id` equals its key. */
 export const WORLD_ANIMATION_SCHEDULES: Record<WorldAnimationId, AnimationFrameSchedule> = {
   water: waterAnimation,
@@ -114,6 +132,8 @@ export const WORLD_ANIMATION_SCHEDULES: Record<WorldAnimationId, AnimationFrameS
   pineSway: pineSwayAnimation,
   tallGrass: tallGrassAnimation,
   playerWalk: playerWalkAnimation,
+  windmill: windmillAnimation,
+  waterWheel: waterWheelAnimation,
 }
 
 /** A schedule with every field validated; the helpers only ever read this shape. */

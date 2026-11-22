@@ -3,11 +3,13 @@ import { useState } from '#imports'
 import { createCollisionGrid, worldMap } from '~/utils/world-map'
 import {
   configureUISounds,
+  getAudioContext,
   isLoopPlaying,
   playUISound,
   registerLoop,
   registerSound,
   setLoopVolume,
+  setMasterVolume,
   setUISoundsEnabled,
   startLoop,
   stopLoop,
@@ -23,14 +25,15 @@ import {
  *
  * Everything is synthesized through `@thenormvg/web-have-sounds` - no audio
  * files, no extra dependencies. The engine is configured once with the
- * `organic` feel (warm triangle waves) at a subtle master volume, then
- * five custom one-shots and four custom loops are registered:
+ * `organic` feel (warm triangle waves) at an audible master level, then
+ * six custom one-shots and four custom loops are registered:
  *
  *   `pw-move`      a soft grass footstep, throttled so held movement breathes
  *   `pw-rustle`    an occasional dry-leaf flick for crossing tall grass
  *   `pw-interact`  a friendly two-note "hm?" for talking to props and signs
  *   `pw-landmark`  a low, slow bell for arriving somewhere new
  *   `pw-beach`     a lighter shell-chime for the shore
+ *   `pw-cat-meow`  the cat's small two-phase meow, fired by `pw:cat-meow`
  *   `pw-forest`    the wind voice: no bed, no hum - just occasional soft
  *                  gusts, sparse leaf rustles, and a distant bird, each
  *                  arriving on its own irregular clock with silence between
@@ -48,10 +51,14 @@ import {
  *
  * Safety rules the layer never breaks:
  *   - nothing plays before the first user gesture; the first pointer or key
- *     press warms the AudioContext up and only then may the forest fade in
+ *     press resumes the AudioContext and only then may the forest fade in
+ *   - the world is on by default: that first gesture auto-unmutes (unless
+ *     the player has already chosen a mute state this session) and the beds
+ *     fade in over their own two-to-three-second envelopes
  *   - `prefers-reduced-motion: reduce` keeps the ambient loops off entirely -
  *     short cues still play, quietly, because they are feedback, not motion
- *   - muted state persists to localStorage and silences loops and one-shots
+ *   - muted state persists to localStorage and silences loops and one-shots;
+ *     an explicit toggle press always wins over the default-on
  *   - SSR-safe: no browser API is touched at import time, and every public
  *     function no-ops on the server
  *
@@ -65,6 +72,7 @@ const RUSTLE_SOUND_ID = 'pw-rustle'
 const INTERACT_SOUND_ID = 'pw-interact'
 const LANDMARK_SOUND_ID = 'pw-landmark'
 const BEACH_SOUND_ID = 'pw-beach'
+const CAT_MEOW_SOUND_ID = 'pw-cat-meow'
 const FOREST_LOOP_ID = 'pw-forest'
 const POND_LOOP_ID = 'pw-pond'
 const SEA_LOOP_ID = 'pw-sea'
@@ -82,37 +90,39 @@ const LANDMARK_CUES: Record<string, string> = {
 }
 
 /** Warm and subtle - every sound passes through this master level. */
-const MASTER_VOLUME = 0.35
+const MASTER_VOLUME = 0.9
 /** Where the mute preference survives reloads. */
 const MUTE_STORAGE_KEY = 'pixelworld:sounds-muted'
+/** The cat may speak at most once per this many milliseconds. */
+const CAT_MEOW_THROTTLE_MS = 4000
 
 /* Proximity mixing: how loud each bed sits, and how far it reaches. */
 /** The wind voice's resting level, away from cliffs and open fields. */
-const WIND_BASE_VOLUME = 0.36
+const WIND_BASE_VOLUME = 0.5
 /** The most the wind voice swells to in the open or against a cliff. */
-const WIND_MAX_VOLUME = 0.48
+const WIND_MAX_VOLUME = 0.72
 /** Openness of the surrounding tiles adds up to this much wind. */
-const WIND_OPEN_BOOST = 0.14
+const WIND_OPEN_BOOST = 0.16
 /** Standing close to a cliff face adds up to this much wind. */
 const WIND_CLIFF_BOOST = 0.1
 /** The water voice's resting level, far from any shore. */
-const WATER_BASE_VOLUME = 0.05
+const WATER_BASE_VOLUME = 0.08
 /** The water voice's level right at the pond's edge. */
-const WATER_NEAR_VOLUME = 0.42
+const WATER_NEAR_VOLUME = 0.6
 /** Tiles from a shore before the water bed rests at its base level. */
 const WATER_FADE_TILES = 8
 /** Tiles from a cliff face before it stops adding wind. */
 const CLIFF_FADE_TILES = 4
 /** The sea voice's resting level, far inland. */
-const SEA_BASE_VOLUME = 0.02
+const SEA_BASE_VOLUME = 0.04
 /** The sea voice's level at the shoreline. */
-const SEA_NEAR_VOLUME = 0.5
+const SEA_NEAR_VOLUME = 0.65
 /** Tiles from the sea before the wash rests at its base level. */
 const SEA_FADE_TILES = 7
 /** The river voice's resting level, away from its course. */
-const RIVER_BASE_VOLUME = 0.02
+const RIVER_BASE_VOLUME = 0.04
 /** The river voice's level on its bank. */
-const RIVER_NEAR_VOLUME = 0.34
+const RIVER_NEAR_VOLUME = 0.55
 /** Tiles from the river course before the babble rests at its base. */
 const RIVER_FADE_TILES = 5
 /** The first row of the open sea, south of the beach. */
@@ -128,6 +138,10 @@ let layerConsumers = 0
 let detachGlobalLayer: (() => void) | null = null
 /** True once any code has set the mute state explicitly this session. */
 let muteTouched = false
+/** Wall-clock ms of the last meow, so the cat never chatters. */
+let lastCatMeowAt = 0
+/** True once the engine has actually created its AudioContext. */
+let contextReady = false
 /**
  * Wall-clock ms until a fading-out bed has fully let go. While a stop is
  * still in flight, `isLoopPlaying` truthfully reports the dying loop, so
@@ -157,7 +171,7 @@ function moveStep (synth: SynthContext): void {
     filterFreq: 850 * synth.params.pitchMult,
     freqRampTo: 320,
     q: 0.8,
-    peak: 0.14 * synth.volume
+    peak: 0.11 * synth.volume
   })
 }
 
@@ -205,14 +219,14 @@ function interactCue (synth: SynthContext): void {
     freq: 392 * synth.params.pitchMult,
     endFreq: 466 * synth.params.pitchMult,
     duration: 0.12 * synth.params.decayMult,
-    peak: 0.1 * synth.volume,
+    peak: 0.08 * synth.volume,
     oscType: 'triangle',
     filterFreq: 1800
   })
   synthHelpers.tone(synth, {
     freq: 587 * synth.params.pitchMult,
     duration: 0.11 * synth.params.decayMult,
-    peak: 0.07 * synth.volume,
+    peak: 0.055 * synth.volume,
     oscType: 'triangle',
     filterFreq: 2200,
     startOffset: 0.07
@@ -224,14 +238,14 @@ function landmarkChime (synth: SynthContext): void {
   synthHelpers.chord(synth, {
     notes: [98, 147, 196],
     spacing: 0.05,
-    peak: 0.2 * synth.volume,
+    peak: 0.14 * synth.volume,
     duration: 1.2 * synth.params.decayMult,
     oscType: 'sine'
   })
   synthHelpers.tone(synth, {
     freq: 392 * synth.params.pitchMult,
     duration: 0.5 * synth.params.decayMult,
-    peak: 0.045 * synth.volume,
+    peak: 0.035 * synth.volume,
     oscType: 'sine',
     startOffset: 0.14
   })
@@ -248,7 +262,7 @@ function beachChime (synth: SynthContext): void {
   synthHelpers.chord(synth, {
     notes: [330, 495, 660],
     spacing: 0.06,
-    peak: 0.11 * volume,
+    peak: 0.09 * volume,
     duration: 0.85 * synth.params.decayMult,
     oscType: 'sine'
   })
@@ -277,6 +291,63 @@ function beachChime (synth: SynthContext): void {
   noise.stop(time + 0.9)
 }
 
+/**
+ * The cat's voice: a small, curious two-phase meow.
+ *
+ * One triangle oscillator bends up through "mi" (600 -> 900 Hz over
+ * 150 ms) and then down through "yao" (900 -> 400 Hz over 350 ms). A
+ * narrow bandpass formant follows the pitch so the vowel moves with it,
+ * and a whisper of filtered noise underneath gives the meow its breath.
+ * It is a one-shot, never a bed, and it sits below the interaction cue.
+ */
+function catMeow (synth: SynthContext): void {
+  const { ctx, time, volume } = synth
+  const at = time + 0.01
+  const peak = 0.055 * volume
+
+  const osc = ctx.createOscillator()
+  osc.type = 'triangle'
+  osc.frequency.setValueAtTime(600, at)
+  osc.frequency.exponentialRampToValueAtTime(900, at + 0.15)
+  osc.frequency.exponentialRampToValueAtTime(400, at + 0.5)
+
+  // The formant sweeps with the pitch, narrow enough to read as a vowel.
+  const formant = ctx.createBiquadFilter()
+  formant.type = 'bandpass'
+  formant.Q.value = 4
+  formant.frequency.setValueAtTime(700, at)
+  formant.frequency.exponentialRampToValueAtTime(1100, at + 0.15)
+  formant.frequency.exponentialRampToValueAtTime(520, at + 0.5)
+
+  const envelope = ctx.createGain()
+  envelope.gain.setValueAtTime(0.0001, at)
+  envelope.gain.exponentialRampToValueAtTime(peak, at + 0.045)
+  envelope.gain.setValueAtTime(peak * 0.85, at + 0.18)
+  envelope.gain.exponentialRampToValueAtTime(0.0001, at + 0.52)
+
+  osc.connect(formant)
+  formant.connect(envelope)
+  synth.connect(envelope)
+
+  // A faint breath of noise under the vowel, shaped by the same envelope.
+  const breath = ctx.createBufferSource()
+  breath.buffer = createNoiseBuffer(ctx, 0.55)
+  const breathFilter = ctx.createBiquadFilter()
+  breathFilter.type = 'bandpass'
+  breathFilter.frequency.value = 1400
+  breathFilter.Q.value = 1.2
+  const breathGain = ctx.createGain()
+  breathGain.gain.value = 0.12
+  breath.connect(breathFilter)
+  breathFilter.connect(breathGain)
+  breathGain.connect(envelope)
+
+  osc.start(at)
+  osc.stop(at + 0.55)
+  breath.start(at)
+  breath.stop(at + 0.55)
+}
+
 /* ------------------------------------------------------------------ *
  * Shared synth plumbing.                                            *
  * ------------------------------------------------------------------ */
@@ -302,7 +373,7 @@ function birdChirp (synth: SynthContext): void {
   for (let index = 0; index < notes; index++) {
     const osc = ctx.createOscillator()
     osc.type = 'sine'
-    const peak = 0.03 * volume * (0.7 + Math.random() * 0.6)
+    const peak = 0.06 * volume * (0.7 + Math.random() * 0.6)
     const startFreq = base * (1 + index * 0.08)
     osc.frequency.setValueAtTime(startFreq, at)
     osc.frequency.exponentialRampToValueAtTime(startFreq * 0.72, at + 0.08)
@@ -332,7 +403,7 @@ function pondPlip (synth: SynthContext): void {
   osc.frequency.exponentialRampToValueAtTime(base * 2.1, at + 0.07)
 
   const envelope = ctx.createGain()
-  const peak = 0.05 * volume * (0.7 + Math.random() * 0.5)
+  const peak = 0.09 * volume * (0.7 + Math.random() * 0.5)
   envelope.gain.setValueAtTime(0.0001, at)
   envelope.gain.exponentialRampToValueAtTime(peak, at + 0.012)
   envelope.gain.exponentialRampToValueAtTime(0.0001, at + 0.1)
@@ -356,7 +427,7 @@ function riverGurgle (synth: SynthContext): void {
   osc.frequency.exponentialRampToValueAtTime(base * 0.9, at + 0.14)
 
   const envelope = ctx.createGain()
-  const peak = 0.035 * volume * (0.6 + Math.random() * 0.5)
+  const peak = 0.07 * volume * (0.6 + Math.random() * 0.5)
   envelope.gain.setValueAtTime(0.0001, at)
   envelope.gain.exponentialRampToValueAtTime(peak, at + 0.015)
   envelope.gain.exponentialRampToValueAtTime(0.0001, at + 0.16)
@@ -403,9 +474,21 @@ function forestBed (synth: SynthContext): LoopControl {
     }
   }
 
-  /** Re-run an event on an irregular clock, so nothing is metronomic. */
-  const every = (minDelayMs: number, maxDelayMs: number, event: () => void): void => {
-    const schedule = (): void => {
+  /**
+   * Re-run an event on an irregular clock, so nothing is metronomic.
+   * `firstDelayMs` lets the first event arrive almost at once, so the
+   * forest is audible the moment the player's gesture wakes it.
+   */
+  const every = (
+    minDelayMs: number,
+    maxDelayMs: number,
+    event: () => void,
+    firstDelayMs?: number
+  ): void => {
+    const schedule = (first: boolean): void => {
+      const delay = first && firstDelayMs !== undefined
+        ? firstDelayMs
+        : minDelayMs + Math.random() * (maxDelayMs - minDelayMs)
       timers.push(setTimeout(() => {
         if (!disposed) {
           if (ctx.state === 'running') {
@@ -415,11 +498,11 @@ function forestBed (synth: SynthContext): LoopControl {
               // one missed moment must never sink the whole voice
             }
           }
-          schedule()
+          schedule(false)
         }
-      }, minDelayMs + Math.random() * (maxDelayMs - minDelayMs)))
+      }, delay))
     }
-    schedule()
+    schedule(true)
   }
 
   /** One soft gust: noise through a lowpass that opens and settles. */
@@ -439,7 +522,7 @@ function forestBed (synth: SynthContext): LoopControl {
     filter.frequency.linearRampToValueAtTime(130, at + duration)
 
     const envelope = ctx.createGain()
-    const peak = 0.05 * volume * (0.6 + Math.random() * 0.5)
+    const peak = 0.13 * volume * (0.6 + Math.random() * 0.5)
     envelope.gain.setValueAtTime(0.0001, at)
     envelope.gain.linearRampToValueAtTime(peak, at + duration * 0.35)
     envelope.gain.linearRampToValueAtTime(0.0001, at + duration)
@@ -476,8 +559,8 @@ function forestBed (synth: SynthContext): LoopControl {
       envelope.gain.exponentialRampToValueAtTime(peak, start + 0.02)
       envelope.gain.exponentialRampToValueAtTime(0.0001, start + 0.11)
     }
-    flick(at, 0.04 * volume * (0.7 + Math.random() * 0.4))
-    flick(at + 0.09, 0.022 * volume * (0.6 + Math.random() * 0.5))
+    flick(at, 0.09 * volume * (0.7 + Math.random() * 0.4))
+    flick(at + 0.09, 0.05 * volume * (0.6 + Math.random() * 0.5))
 
     source.connect(filter)
     filter.connect(envelope)
@@ -487,11 +570,14 @@ function forestBed (synth: SynthContext): LoopControl {
   }
 
   // Occasional, never on a beat: air moves, leaves stir, a bird answers.
-  every(7000, 16000, gust)
-  every(12000, 26000, canopyFlick)
+  // The first gust arrives within half a second, so the world is alive the
+  // moment the player's gesture wakes it; later events keep their own
+  // slow, irregular clocks.
+  every(7000, 16000, gust, 350 + Math.random() * 450)
+  every(12000, 26000, canopyFlick, 2200 + Math.random() * 900)
   every(12000, 28000, () => {
     birdChirp(synth)
-  })
+  }, 5000 + Math.random() * 2000)
 
   return {
     // No continuous sources exist; disposal ends the schedulers and any
@@ -564,13 +650,14 @@ function pondBed (synth: SynthContext): LoopControl {
   }
 
   // the two washes drift apart and realign, like water finding the shore
-  washVoice(720, 1, 0.032, 0.21, 0.018)
-  washVoice(1150, 1.4, 0.022, 0.33, 0.011)
+  washVoice(720, 1, 0.085, 0.21, 0.045)
+  washVoice(1150, 1.4, 0.06, 0.33, 0.03)
 
   // -- the rare droplets --
   let disposed = false
   let plipTimer: ReturnType<typeof setTimeout> | null = null
-  const schedulePlip = (): void => {
+  const schedulePlip = (first: boolean): void => {
+    const delay = first ? 1600 + Math.random() * 1800 : 8000 + Math.random() * 10000
     plipTimer = setTimeout(() => {
       if (!disposed) {
         if (ctx.state === 'running') {
@@ -580,11 +667,11 @@ function pondBed (synth: SynthContext): LoopControl {
             // and neither may a failed droplet sink the pond
           }
         }
-        schedulePlip()
+        schedulePlip(false)
       }
-    }, 8000 + Math.random() * 10000)
+    }, delay)
   }
-  schedulePlip()
+  schedulePlip(true)
 
   return {
     sources: washes.flatMap(({ source, lfo }) => [source, lfo]),
@@ -651,7 +738,7 @@ function seaBed (synth: SynthContext): LoopControl {
     sprayGain.gain.value = 0.16
 
     const envelope = ctx.createGain()
-    const peak = 0.06 * volume * (0.7 + Math.random() * 0.5)
+    const peak = 0.15 * volume * (0.7 + Math.random() * 0.5)
     envelope.gain.setValueAtTime(0.0001, at)
     envelope.gain.linearRampToValueAtTime(peak, at + duration * 0.4)
     envelope.gain.linearRampToValueAtTime(0.0001, at + duration)
@@ -670,7 +757,7 @@ function seaBed (synth: SynthContext): LoopControl {
   // The first wave arrives soon after the bed wakes; later ones keep their
   // own slow, irregular clock so the shore never settles into a rhythm.
   const scheduleWave = (first: boolean): void => {
-    const delay = first ? 1200 + Math.random() * 1800 : 5200 + Math.random() * 4000
+    const delay = first ? 450 + Math.random() * 650 : 5200 + Math.random() * 4000
     waveTimer = setTimeout(() => {
       if (!disposed) {
         if (ctx.state === 'running') {
@@ -734,14 +821,14 @@ function riverBed (synth: SynthContext): LoopControl {
   clarity.Q.value = 0.4
 
   const flowGain = ctx.createGain()
-  flowGain.gain.value = 0.028 * volume
+  flowGain.gain.value = 0.07 * volume
 
   // The current breathes slowly...
   const breath = ctx.createOscillator()
   breath.type = 'sine'
   breath.frequency.value = 0.11
   const breathDepth = ctx.createGain()
-  breathDepth.gain.value = 0.012 * volume
+  breathDepth.gain.value = 0.03 * volume
   breath.connect(breathDepth)
   breathDepth.connect(flowGain.gain)
 
@@ -750,7 +837,7 @@ function riverBed (synth: SynthContext): LoopControl {
   chatter.type = 'sine'
   chatter.frequency.value = 4.2
   const chatterDepth = ctx.createGain()
-  chatterDepth.gain.value = 0.006 * volume
+  chatterDepth.gain.value = 0.015 * volume
   chatter.connect(chatterDepth)
   chatterDepth.connect(flowGain.gain)
 
@@ -766,7 +853,8 @@ function riverBed (synth: SynthContext): LoopControl {
   // -- the sparse gurgles --
   let disposed = false
   let gurgleTimer: ReturnType<typeof setTimeout> | null = null
-  const scheduleGurgle = (): void => {
+  const scheduleGurgle = (first: boolean): void => {
+    const delay = first ? 700 + Math.random() * 900 : 1800 + Math.random() * 3200
     gurgleTimer = setTimeout(() => {
       if (!disposed) {
         if (ctx.state === 'running') {
@@ -776,11 +864,11 @@ function riverBed (synth: SynthContext): LoopControl {
             // one missed bubble must never sink the river
           }
         }
-        scheduleGurgle()
+        scheduleGurgle(false)
       }
-    }, 1800 + Math.random() * 3200)
+    }, delay)
   }
-  scheduleGurgle()
+  scheduleGurgle(true)
 
   return {
     sources: [source, breath, chatter],
@@ -813,6 +901,7 @@ function ensureEngine (): void {
   registerSound(INTERACT_SOUND_ID, interactCue, { throttleMs: 140 })
   registerSound(LANDMARK_SOUND_ID, landmarkChime, { throttleMs: 500 })
   registerSound(BEACH_SOUND_ID, beachChime, { throttleMs: 700 })
+  registerSound(CAT_MEOW_SOUND_ID, catMeow)
   registerLoop(FOREST_LOOP_ID, forestBed, { fadeIn: 2.2, fadeOut: 1.4 })
   registerLoop(POND_LOOP_ID, pondBed, { fadeIn: 2.5, fadeOut: 1.6 })
   registerLoop(SEA_LOOP_ID, seaBed, { fadeIn: 3, fadeOut: 2 })
@@ -949,6 +1038,9 @@ export interface WorldSounds {
   /** A low, slow chime for arriving at a landmark. Pass the landmark id
    *  to pick its own cue; unknown ids fall back to the forest bell. */
   playLandmark (landmarkId?: string): void
+  /** The cat's small two-phase meow. Normally fired by the
+   *  `pw:cat-meow` window event; throttled to one every four seconds. */
+  playCatMeow (): void
   /** Start (or re-affirm) the ambient loops. No-op while muted, before
    *  the first gesture, or under reduced motion. */
   startAmbient (): void
@@ -1000,6 +1092,19 @@ export function useWorldSounds (): WorldSounds {
   /** Fade the ambient beds in, if everything allows it. */
   function maybeStartAmbient (): void {
     if (!ambientIntent.value || muted.value || !unlocked.value || reducedMotion.value) {
+      return
+    }
+    // Never start a bed against a suspended context: its schedulers would
+    // skip every event until the browser lets audio through. The unlock,
+    // unmute and visibility paths resume first and then call back here.
+    // `getAudioContext()` lazily creates a context, so only peek once the
+    // engine has actually made one - a pre-gesture peek would leave a
+    // suspended context behind.
+    if (!contextReady) {
+      return
+    }
+    const ctx = getAudioContext()
+    if (!ctx || ctx.state !== 'running') {
       return
     }
     const windAlive = startLoopIfFresh(FOREST_LOOP_ID, desiredWindVolume)
@@ -1071,9 +1176,33 @@ export function useWorldSounds (): WorldSounds {
     playUISound(cue)
   }
 
+  /**
+   * The cat's little voice. Fired by the `pw:cat-meow` window event; the
+   * local rate limit keeps her to one meow every four seconds, and the
+   * usual mute/unlock guards apply exactly as they do to every other cue.
+   */
+  function playCatMeow (): void {
+    if (muted.value || !unlocked.value) {
+      return
+    }
+    const now = Date.now()
+    if (now - lastCatMeowAt < CAT_MEOW_THROTTLE_MS) {
+      return
+    }
+    lastCatMeowAt = now
+    playUISound(CAT_MEOW_SOUND_ID)
+  }
+
   function startAmbient (): void {
     ambientIntent.value = true
-    maybeStartAmbient()
+    if (!import.meta.client || !unlocked.value) {
+      return
+    }
+    void resumeAudio().then((running) => {
+      if (running) {
+        maybeStartAmbient()
+      }
+    })
   }
 
   function stopAmbient (): void {
@@ -1128,13 +1257,63 @@ export function useWorldSounds (): WorldSounds {
     applyAmbientMixes()
   }
 
-  function setMuted (value: boolean): void {
-    if (muted.value === value) {
+  /**
+   * Make sure the shared AudioContext is genuinely running. Browsers create
+   * it suspended until a gesture, and `resume()` is asynchronous, so callers
+   * that need certainty await this. Returns false while the browser is still
+   * holding audio back.
+   */
+  async function resumeAudio (): Promise<boolean> {
+    if (!import.meta.client) {
+      return false
+    }
+    let ctx = getAudioContext()
+    if (!ctx) {
+      warmUpAudio()
+      ctx = getAudioContext()
+    }
+    if (!ctx) {
+      return false
+    }
+    contextReady = true
+    if (ctx.state !== 'running') {
+      try {
+        await ctx.resume()
+      } catch {
+        // autoplay still blocked; the next gesture tries again
+      }
+    }
+    return ctx.state === 'running'
+  }
+
+  /** Re-arm the first-gesture unlock if the browser refused to resume. */
+  let retryArmed = false
+  function armGestureRetry (): void {
+    if (retryArmed || !import.meta.client) {
       return
     }
+    retryArmed = true
+    const retry = (): void => {
+      retryArmed = false
+      window.removeEventListener('pointerdown', retry)
+      window.removeEventListener('keydown', retry)
+      unlock()
+    }
+    window.addEventListener('pointerdown', retry, { passive: true })
+    window.addEventListener('keydown', retry)
+  }
+
+  /**
+   * Apply a mute state. `explicit` marks a deliberate choice (the toggle or
+   * a bound prop); the first-gesture default-on must never override one.
+   */
+  function applyMuted (value: boolean, explicit: boolean): void {
+    if (explicit) {
+      muteTouched = true
+    }
+    const changed = muted.value !== value
     muted.value = value
-    muteTouched = true
-    if (import.meta.client) {
+    if (changed && import.meta.client) {
       try {
         window.localStorage.setItem(MUTE_STORAGE_KEY, value ? '1' : '0')
       } catch {
@@ -1146,14 +1325,33 @@ export function useWorldSounds (): WorldSounds {
       return
     }
     // Disabling the engine also stops every running loop; unmuting must
-    // bring the bed back and confirm, quietly, that the forest returned.
+    // resume the context and bring the bed back under its own slow fade.
     setUISoundsEnabled(!value)
     if (value) {
       ambientPlaying.value = false
-    } else {
-      maybeStartAmbient()
-      playUISound('select', { feel: 'soft' })
+      return
     }
+    if (!unlocked.value) {
+      // The first gesture will resume the context and start the bed; do not
+      // create a suspended context just because a prop said "unmuted".
+      return
+    }
+    setMasterVolume(MASTER_VOLUME)
+    void resumeAudio().then((running) => {
+      if (running) {
+        maybeStartAmbient()
+      } else {
+        armGestureRetry()
+      }
+    })
+    if (explicit && unlocked.value) {
+      // A quiet confirmation that the forest returned, below the world mix.
+      playUISound(INTERACT_SOUND_ID)
+    }
+  }
+
+  function setMuted (value: boolean): void {
+    applyMuted(value, true)
   }
 
   function toggleMuted (): void {
@@ -1161,12 +1359,35 @@ export function useWorldSounds (): WorldSounds {
   }
 
   function unlock (): void {
-    if (unlocked.value || !import.meta.client) {
+    if (!import.meta.client) {
       return
     }
+    const first = !unlocked.value
     unlocked.value = true
     warmUpAudio()
-    maybeStartAmbient()
+    setMasterVolume(MASTER_VOLUME)
+
+    // Default-on: the first real gesture wakes the world unless the player
+    // has already chosen a mute state this session. A restored preference
+    // still shows on the button before that gesture, but never leaves the
+    // world silent once the player is actually here.
+    if (!muteTouched && muted.value) {
+      applyMuted(false, false)
+    }
+
+    // Seed the mix from the spawn tile, so the first bed already knows
+    // whether the player is standing by water or in the open.
+    if (first) {
+      updateProximity(worldMap.spawn.x, worldMap.spawn.y)
+    }
+
+    void resumeAudio().then((running) => {
+      if (running) {
+        maybeStartAmbient()
+      } else {
+        armGestureRetry()
+      }
+    })
   }
 
   /** Read the saved mute preference once, before anything else speaks. */
@@ -1176,7 +1397,10 @@ export function useWorldSounds (): WorldSounds {
     }
     try {
       if (window.localStorage.getItem(MUTE_STORAGE_KEY) === '1') {
-        setMuted(true)
+        // Show the saved state on the button, but keep it non-explicit so
+        // the first gesture can still wake the world (default-on).
+        muted.value = true
+        setUISoundsEnabled(false)
       }
     } catch {
       // no storage, no problem - defaults win
@@ -1187,6 +1411,25 @@ export function useWorldSounds (): WorldSounds {
   function mountGlobalLayer (): void {
     if (detachGlobalLayer !== null) {
       return
+    }
+
+    /** Payload of the gameplay agent's `pw:player-move` window event. */
+    interface PlayerMoveDetail {
+      /** Player position in world pixels. */
+      x: number
+      /** Player position in world pixels. */
+      y: number
+      /** True while walking; a final false arrives within ~400 ms of stopping. */
+      moving: boolean
+    }
+
+    /** Payload of the gameplay agent's `pw:landmark` window event. */
+    interface LandmarkDetail {
+      /** Landmark id, matched against LANDMARK_CUES. */
+      id: string
+      /** Landmark tile coordinates. */
+      x: number
+      y: number
     }
 
     const onFirstGesture = (): void => {
@@ -1204,6 +1447,50 @@ export function useWorldSounds (): WorldSounds {
     window.addEventListener('pointerdown', onPointerDown, { passive: true })
     window.addEventListener('keydown', onKeyDown)
 
+    // The cat companion announces herself through a window CustomEvent.
+    // This listener lives with the rest of the global layer, so it is
+    // attached once and removed with the layer.
+    const onCatMeow = (): void => {
+      playCatMeow()
+    }
+    window.addEventListener('pw:cat-meow', onCatMeow)
+
+    // The gameplay loop reports the player's position and discoveries
+    // through window CustomEvents, keeping the sound layer decoupled from
+    // the renderer. The move event carries world pixels; proximity mixing
+    // works in tiles, so convert before retuning the beds. The mix update
+    // is silent, so it keeps tracking even while muted; the footstep cue
+    // itself obeys the same mute/unlock guard as every other cue.
+    const onPlayerMove = (event: Event): void => {
+      if (!unlocked.value) {
+        return
+      }
+      const detail = (event as CustomEvent<PlayerMoveDetail>).detail
+      if (!detail || !Number.isFinite(detail.x) || !Number.isFinite(detail.y)) {
+        return
+      }
+      const tileSize = worldMap.tileSize > 0 ? worldMap.tileSize : 1
+      updateProximity(detail.x / tileSize, detail.y / tileSize)
+      if (detail.moving === true && !muted.value) {
+        playMove()
+      }
+    }
+    window.addEventListener('pw:player-move', onPlayerMove)
+
+    // A newly discovered landmark gets its own one-shot cue. Unknown ids
+    // fall back to the forest bell inside playLandmark.
+    const onLandmark = (event: Event): void => {
+      if (muted.value || !unlocked.value) {
+        return
+      }
+      const detail = (event as CustomEvent<LandmarkDetail>).detail
+      if (!detail || typeof detail.id !== 'string' || detail.id.length === 0) {
+        return
+      }
+      playLandmark(detail.id)
+    }
+    window.addEventListener('pw:landmark', onLandmark)
+
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
     reducedMotion.value = motionQuery.matches
     const onMotionChange = (event: MediaQueryListEvent): void => {
@@ -1219,8 +1506,14 @@ export function useWorldSounds (): WorldSounds {
     const onVisibilityChange = (): void => {
       if (document.hidden) {
         stopBed()
-      } else {
-        maybeStartAmbient()
+      } else if (unlocked.value) {
+        // The browser may have suspended the context while hidden; resume
+        // it before the beds try to schedule anything.
+        void resumeAudio().then((running) => {
+          if (running) {
+            maybeStartAmbient()
+          }
+        })
       }
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
@@ -1232,6 +1525,9 @@ export function useWorldSounds (): WorldSounds {
 
     detachGlobalLayer = () => {
       removeGestureListeners()
+      window.removeEventListener('pw:cat-meow', onCatMeow)
+      window.removeEventListener('pw:player-move', onPlayerMove)
+      window.removeEventListener('pw:landmark', onLandmark)
       motionQuery.removeEventListener('change', onMotionChange)
       document.removeEventListener('visibilitychange', onVisibilityChange)
       detachGlobalLayer = null
@@ -1276,6 +1572,7 @@ export function useWorldSounds (): WorldSounds {
     playRustle,
     playInteract,
     playLandmark,
+    playCatMeow,
     startAmbient,
     stopAmbient,
     updateProximity,

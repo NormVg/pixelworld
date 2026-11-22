@@ -3,19 +3,26 @@
  * WorldAudio - the app-wide sound layer, mounted once in app.vue.
  *
  * Calling `useWorldSounds()` here is what mounts the layer: on the first
- * user gesture the AudioContext warms up and the ambient forest bed may
- * fade in (never before, and never under prefers-reduced-motion), and the
- * shared mute state - persisted across reloads - is restored.
+ * user gesture the AudioContext is resumed and the ambient forest bed
+ * fades in (never before, and never under prefers-reduced-motion). The
+ * world is on by default, so that first gesture wakes it without the
+ * player hunting for this key; the shared mute state - persisted across
+ * reloads - is restored, and an explicit press always wins.
  *
  * The only thing it renders is a tiny pixel mute key: dark forest plastic
  * with an etched edge, pressed to lantern amber, cut from the same cloth
- * as the D-pad keys. It supports `v-model:muted`, so a page can own the
- * toggle instead if it ever wants to.
+ * as the D-pad keys. A small lamp on the key is lit amber while the world
+ * is speaking and dark while it is muted. It supports `v-model:muted`, so
+ * a page can own the toggle instead if it ever wants to.
  */
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   /** When bound, drives the shared mute state; otherwise the toggle owns it. */
   muted?: boolean | undefined
-}>()
+}>(), {
+  // Without an explicit default, Vue's boolean casting turns an absent
+  // prop into `false`, which would look like a deliberate unmute on mount.
+  muted: undefined
+})
 
 const emit = defineEmits<{
   'update:muted': [boolean]
@@ -43,11 +50,13 @@ watch(sounds.muted, (value) => {
   <button
     type="button"
     class="pw-audio"
-    aria-label="Forest sounds"
+    :class="isMuted ? 'pw-audio--muted' : 'pw-audio--on'"
+    aria-label="Mute forest sounds"
     :aria-pressed="isMuted"
     :title="isMuted ? 'Forest sounds are off. Click to unmute.' : 'Forest sounds are on. Click to mute.'"
     @click="sounds.toggleMuted()"
   >
+    <span class="pw-audio__led" aria-hidden="true"></span>
     <svg class="pw-audio__icon" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
       <!-- the speaker cone, stepped like everything else here -->
       <g fill="currentColor">
@@ -104,6 +113,36 @@ watch(sounds.muted, (value) => {
 .pw-audio:hover {
   color: var(--pw-amber-300);
   background: var(--pw-forest-700);
+}
+
+/* The world is speaking: the key carries a warm lantern glow. */
+.pw-audio--on {
+  color: var(--pw-amber-300);
+  box-shadow:
+    inset 0 0 0 1px rgba(231, 210, 168, 0.32),
+    0 0 10px rgba(228, 189, 150, 0.2);
+}
+
+/* Muted: the key stays legible but settles back into the dark. */
+.pw-audio--muted {
+  color: var(--pw-cream-100);
+  opacity: 0.78;
+}
+
+/* The little state lamp: amber while the world speaks, dark when muted. */
+.pw-audio__led {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 3px;
+  height: 3px;
+  background: var(--pw-forest-950);
+  box-shadow: inset 0 0 0 1px rgba(231, 210, 168, 0.18);
+}
+
+.pw-audio--on .pw-audio__led {
+  background: var(--pw-amber-300);
+  box-shadow: 0 0 4px rgba(228, 189, 150, 0.85);
 }
 
 /* Pressing lights the key like a lantern flipping on. */

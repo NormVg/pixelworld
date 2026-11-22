@@ -16,6 +16,8 @@ import { fishSprites } from '~/utils/pixel-sprite-fish'
 import { bugSprites } from '~/utils/pixel-sprite-bugs'
 import { birdSprites } from '~/utils/pixel-sprite-birds'
 import { farmSprites } from '~/utils/pixel-sprite-farm'
+import { animalSprites } from '~/utils/pixel-sprite-animals'
+import { cozySprites } from '~/utils/pixel-sprite-cozy'
 import { villageSprites } from '~/utils/pixel-sprite-village'
 import { shoreSprites } from '~/utils/pixel-sprite-shore'
 import { pineSprite } from '~/utils/pixel-sprite-tree-pine'
@@ -63,6 +65,11 @@ export const propSprites = {
   // Farm buildings and props.
   cottage: farmSprites.cottage,
   barn: farmSprites.barn,
+  store: farmSprites.store,
+  windmill: farmSprites.windmill,
+  well: farmSprites.well,
+  waterWheel: farmSprites.waterWheel,
+  wheel: farmSprites.waterWheel,
   campfire: farmSprites.campfire,
   scarecrow: farmSprites.scarecrow,
   hayBale: farmSprites.hayBale,
@@ -78,6 +85,19 @@ export const propSprites = {
   fenceVertical: farmSprites.fenceVertical,
   crop: farmSprites.crops,
   crops: farmSprites.crops,
+
+  // Pasture animals for the meadow herd.
+  cow: animalSprites.cow,
+  bull: animalSprites.bull,
+  horse: animalSprites.horse,
+  goat: animalSprites.goat,
+  pig: animalSprites.pig,
+
+  // Cozy village and meadow dressing.
+  bench: cozySprites.bench,
+  picnicBlanket: cozySprites.picnicBlanket,
+  mailbox: cozySprites.mailbox,
+  beeSkep: cozySprites.beeSkep,
 
   // Street props redrawn at native 32px; these override the legacy lamp/sign.
   lamp: villageSprites.lamp,

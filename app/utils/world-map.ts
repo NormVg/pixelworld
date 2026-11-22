@@ -60,11 +60,23 @@ export const solidObjectTypes: Set<string> = new Set([
   'willow',
   'crate',
   'rowboat',
-  'driftwood'
+  'driftwood',
+  'store',
+  'windmill',
+  'cow',
+  'bull',
+  'horse',
+  'goat',
+  'pig',
+  'bench',
+  'mailbox',
+  'beeSkep',
+  'well',
+  'waterWheel'
 ])
 
-/** Walkable ground: grass, path, sand, flowers, tall grass, tilled soil, crops, and the wooden bridge deck over the river. */
-const walkableGroundChars = new Set(['.', '-', 's', 'f', 't', 'd', 'c', 'w', 'B'])
+/** Walkable ground: grass, path, sand, flowers, tall grass, tilled soil, crops, and the deck structures over the water — bridges ('B'), dams ('D'), and the arch bridge ('A'). */
+const walkableGroundChars = new Set(['.', '-', 's', 'f', 't', 'd', 'c', 'w', 'B', 'D', 'A'])
 
 /** True when the ground character can be walked on. Water and cliffs are not walkable. */
 export function isWalkableTile(tile: string): boolean {
