@@ -118,17 +118,26 @@ const SEA_BASE_VOLUME = 0.04
 /** The sea voice's level at the shoreline. */
 const SEA_NEAR_VOLUME = 0.65
 /** Tiles from the sea before the wash rests at its base level. */
-const SEA_FADE_TILES = 7
+const SEA_FADE_TILES = 4
 /** The river voice's resting level, away from its course. */
 const RIVER_BASE_VOLUME = 0.04
 /** The river voice's level on its bank. */
 const RIVER_NEAR_VOLUME = 0.55
 /** Tiles from the river course before the babble rests at its base. */
 const RIVER_FADE_TILES = 5
-/** The first row of the open sea, south of the beach. */
-const SEA_FIRST_ROW = 29
-/** The river's southward course, in tiles: pond edge to the sea. */
-const RIVER_COURSE = { minX: 33, maxX: 37, minY: 16, maxY: 28 }
+/** The first row of the open sea, south of the sand. */
+const SEA_FIRST_ROW = 37
+/**
+ * The river's two babbling reaches, in tiles. The stream leaves the
+ * northwest lake and runs east across the village's north side; the
+ * outflow leaves the pond dam and runs southwest through the meadow to
+ * the shore. Water outside these rectangles is still water (the lake and
+ * the pond) or the sea.
+ */
+const RIVER_REACHES = [
+  { minX: 13, maxX: 29, minY: 8, maxY: 16 },
+  { minX: 16, maxX: 37, minY: 25, maxY: 36 }
+] as const
 
 /** Set once the engine has been configured and the sounds registered. */
 let engineReady = false
@@ -915,11 +924,11 @@ function ensureEngine (): void {
 
 /** Tile facts the ambient mix is derived from. */
 interface AmbientFeatures {
-  /** Water tiles that belong to the pond, away from the sea and river. */
+  /** Still-water tiles: the northwest lake and the center-north pond. */
   pondTiles: Array<{ x: number, y: number }>
-  /** Water tiles in the open sea, south of the beach. */
+  /** Water tiles in the open sea, south of the sand. */
   seaTiles: Array<{ x: number, y: number }>
-  /** Water tiles along the river's southward course. */
+  /** Water tiles along the stream and the pond's southwest outflow. */
   riverTiles: Array<{ x: number, y: number }>
   /** Every cliff-face tile in the world. */
   cliffTiles: Array<{ x: number, y: number }>
@@ -930,25 +939,34 @@ interface AmbientFeatures {
 /** Memoized tile scan; computed once on first use, on either side. */
 let ambientFeatures: AmbientFeatures | null = null
 
-/** True when a tile lies inside the river's southward course. */
-function isRiverCourseTile (x: number, y: number): boolean {
-  return x >= RIVER_COURSE.minX && x <= RIVER_COURSE.maxX &&
-    y >= RIVER_COURSE.minY && y <= RIVER_COURSE.maxY
+/** True when a tile lies inside one of the river's babbling reaches. */
+function isRiverReachTile (x: number, y: number): boolean {
+  return RIVER_REACHES.some((reach) =>
+    x >= reach.minX && x <= reach.maxX &&
+    y >= reach.minY && y <= reach.maxY
+  )
 }
 
-/** Distance from a tile to the river's rectangular course. */
-function distanceToRiverCourse (x: number, y: number): number {
-  const dx = x < RIVER_COURSE.minX
-    ? RIVER_COURSE.minX - x
-    : x > RIVER_COURSE.maxX
-      ? x - RIVER_COURSE.maxX
-      : 0
-  const dy = y < RIVER_COURSE.minY
-    ? RIVER_COURSE.minY - y
-    : y > RIVER_COURSE.maxY
-      ? y - RIVER_COURSE.maxY
-      : 0
-  return Math.sqrt(dx * dx + dy * dy)
+/** Distance from a tile to the nearest river reach. */
+function distanceToRiverReach (x: number, y: number): number {
+  let best = Number.POSITIVE_INFINITY
+  for (const reach of RIVER_REACHES) {
+    const dx = x < reach.minX
+      ? reach.minX - x
+      : x > reach.maxX
+        ? x - reach.maxX
+        : 0
+    const dy = y < reach.minY
+      ? reach.minY - y
+      : y > reach.maxY
+        ? y - reach.maxY
+        : 0
+    const squared = dx * dx + dy * dy
+    if (squared < best) {
+      best = squared
+    }
+  }
+  return best === Number.POSITIVE_INFINITY ? Number.MAX_SAFE_INTEGER : Math.sqrt(best)
 }
 
 function ensureAmbientFeatures (): AmbientFeatures {
@@ -965,7 +983,7 @@ function ensureAmbientFeatures (): AmbientFeatures {
       if (tile === '~') {
         if (y >= SEA_FIRST_ROW) {
           seaTiles.push({ x, y })
-        } else if (isRiverCourseTile(x, y)) {
+        } else if (isRiverReachTile(x, y)) {
           riverTiles.push({ x, y })
         } else {
           pondTiles.push({ x, y })
@@ -1218,14 +1236,16 @@ export function useWorldSounds (): WorldSounds {
     const tileX = Math.round(x)
     const tileY = Math.round(y)
 
-    // Pond: quadratic ease from the shore, resting at its base far away.
+    // Pond: quadratic ease from the still water, resting at its base far
+    // away. The scanned still-water tiles cover both the northwest lake
+    // and the center-north pond.
     const pondDistance = nearestTileDistance(features.pondTiles, tileX, tileY)
     const pondCloseness = clamp01(1 - pondDistance / WATER_FADE_TILES)
     desiredWaterVolume = WATER_BASE_VOLUME +
       (WATER_NEAR_VOLUME - WATER_BASE_VOLUME) * pondCloseness * pondCloseness
 
-    // Sea: a broad, linear fade from the south shore, so the wash arrives
-    // a few rows before the sand and lets go once the player turns inland.
+    // Sea: a short linear fade from the south shore, so the wash arrives
+    // around row 33 and reaches the sand without bleeding into the meadow.
     // The scanned shore wins when the map has one; the known sea row keeps
     // the voice working while the map is still being extended.
     const seaDistance = features.seaTiles.length > 0
@@ -1235,12 +1255,13 @@ export function useWorldSounds (): WorldSounds {
     desiredSeaVolume = SEA_BASE_VOLUME +
       (SEA_NEAR_VOLUME - SEA_BASE_VOLUME) * seaCloseness
 
-    // River: a short reach from its course, so the babble stays local.
-    // The scanned water wins when the map has it; the course rectangle is
-    // the fallback while the river is still being carved.
+    // River: a short reach from the stream or the outflow, so the babble
+    // stays local to flowing water. The scanned water wins when the map
+    // has it; the reach rectangles are the fallback while the map is
+    // still being extended.
     const riverDistance = features.riverTiles.length > 0
       ? nearestTileDistance(features.riverTiles, tileX, tileY)
-      : distanceToRiverCourse(tileX, tileY)
+      : distanceToRiverReach(tileX, tileY)
     const riverCloseness = clamp01(1 - riverDistance / RIVER_FADE_TILES)
     desiredRiverVolume = RIVER_BASE_VOLUME +
       (RIVER_NEAR_VOLUME - RIVER_BASE_VOLUME) * riverCloseness

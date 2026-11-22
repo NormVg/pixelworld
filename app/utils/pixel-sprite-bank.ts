@@ -16,6 +16,7 @@ import { fishSprites } from '~/utils/pixel-sprite-fish'
 import { bugSprites } from '~/utils/pixel-sprite-bugs'
 import { birdSprites } from '~/utils/pixel-sprite-birds'
 import { farmSprites } from '~/utils/pixel-sprite-farm'
+import { buildingSprites } from '~/utils/pixel-sprite-buildings'
 import { animalSprites } from '~/utils/pixel-sprite-animals'
 import { cozySprites } from '~/utils/pixel-sprite-cozy'
 import { villageSprites } from '~/utils/pixel-sprite-village'
@@ -62,14 +63,18 @@ export const propSprites = {
   // Legacy props that are still small, cozy, and read well at 32px.
   ...legacyPropSprites,
 
-  // Farm buildings and props.
-  cottage: farmSprites.cottage,
+  // Buildings and standing structures (from the buildings module).
+  cottage: buildingSprites.cottage,
   barn: farmSprites.barn,
-  store: farmSprites.store,
-  windmill: farmSprites.windmill,
-  well: farmSprites.well,
-  waterWheel: farmSprites.waterWheel,
-  wheel: farmSprites.waterWheel,
+  store: buildingSprites.store,
+  windmill: buildingSprites.windmill,
+  well: buildingSprites.well,
+  waterWheel: buildingSprites.waterWheel,
+  wheel: buildingSprites.waterWheel,
+  waterWheelHouse: buildingSprites.waterWheelHouse,
+  house: buildingSprites.house,
+  hut: buildingSprites.hut,
+  mudHut: buildingSprites.mudHut,
   campfire: farmSprites.campfire,
   scarecrow: farmSprites.scarecrow,
   hayBale: farmSprites.hayBale,
@@ -98,6 +103,8 @@ export const propSprites = {
   picnicBlanket: cozySprites.picnicBlanket,
   mailbox: cozySprites.mailbox,
   beeSkep: cozySprites.beeSkep,
+  stoneWall: cozySprites.stoneWall,
+  stonePost: cozySprites.stonePost,
 
   // Street props redrawn at native 32px; these override the legacy lamp/sign.
   lamp: villageSprites.lamp,

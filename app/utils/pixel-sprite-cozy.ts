@@ -16,6 +16,12 @@
  * - `beeSkep`       20x22, a woven straw skep. Alternating light and dark
  *   coil bands wrap a bell-shaped dome, a dark arched entrance opens at the
  *   base, and two single-pixel honey-gold bees hover beside it.
+ * - `stoneWall`     32x22, a low grey fieldstone wall segment. Three staggered
+ *   courses of rounded blocks in sunlit/mid/shade greys, dark mortar seams,
+ *   a wide lighter capstone in the top course, and two moss tufts.
+ * - `stonePost`     32x28, a matching gatepost. A 14px square pillar of four
+ *   staggered stone courses under a shaped lighter capstone, with one moss
+ *   tuft at the base.
  *
  * Conventions:
  * - Each frame is a grid of rows; every row is exactly the sprite's width.
@@ -200,6 +206,83 @@ const BEE_SKEP: PixelFrame = [
 ]
 
 /* ------------------------------------------------------------------ */
+/* Stone wall                                                         */
+/* ------------------------------------------------------------------ */
+
+const STONE_PALETTE: PixelPalette = {
+  o: '#2a2431', // shared outline
+  C: '#b8bec6', // capstone light
+  L: '#9aa2ac', // sunlit grey
+  m: '#7d848e', // mid grey
+  s: '#5b616b', // shade
+  d: '#4a4f57', // mortar seam
+  g: '#6f8a4e', // moss base
+  G: '#8fae62', // moss light
+}
+
+/** 32x22 low fieldstone wall: three staggered courses, capstone, moss tufts. */
+const STONE_WALL: PixelFrame = [
+  '................................',
+  '................................',
+  '.oooooooooooooooooooooooooooooo.',
+  '.odgGLLLd.CCCCCCCCCCCC.dLLLLLdo.',
+  '.oLGgmmms.Cmmmmmmmmmms.Lmmmmmso.',
+  '.oLmmmmms.Cmmmmmmmmmms.Lmmmmmso.',
+  '.oLmmmmms.Cmmmmmmmmmms.Lmmmmmso.',
+  '.odsssssd.dssssssssssd.dsssssdo.',
+  '.oddddddddddddddddddddddddddddo.',
+  '.odLLd.dLLLLLLLd.dLLLLLLd.dLLdo.',
+  '.oLmms.Lmmmmmmms.Lmmmmmms.Lmmso.',
+  '.oLmms.Lmmmmmmms.Lmmmmmms.Lmmso.',
+  '.oLmms.Lmmmmmmms.Lmmmmmms.Lmmso.',
+  '.odssd.dsssssssd.dssssssd.dssdo.',
+  '.oddddddddddddddddddddddddddddo.',
+  '.odLLLLLLd.dLLLLLLd.dLLLLLLLLdo.',
+  '.oLmmmmmms.Lmmmmmms.Lmmmmmmmmso.',
+  '.oLmmmmmms.Lmmmmmms.Lmmmmmmmmso.',
+  '.oLmmmmmms.Lmmmmmms.Lmmmmmmmmso.',
+  '.odssssssd.dssssssd.dsssssgGsdo.',
+  '.oddddddddddddddddddddddddGgddo.',
+  '.oooooooooooooooooooooooooooooo.',
+]
+
+/* ------------------------------------------------------------------ */
+/* Stone post                                                         */
+/* ------------------------------------------------------------------ */
+
+/** 32x28 gatepost: 14px pillar, four staggered courses, shaped capstone. */
+const STONE_POST: PixelFrame = [
+  '................................',
+  '..........oooooooooooo..........',
+  '........oCCCCCCCCCCCCCCo........',
+  '.......oCCCCCCCCCCCCCCCCo.......',
+  '........osssssssssssssso........',
+  '.........oooooooooooooo.........',
+  '.........odLLLLd.dLLLdo.........',
+  '.........oLmmmms.Lmmmso.........',
+  '.........oLmmmms.Lmmmso.........',
+  '.........odssssd.dsssdo.........',
+  '.........oddddddddddddo.........',
+  '.........odLLLLLLLLLLdo.........',
+  '.........oLmmmmmmmmmmso.........',
+  '.........oLmmmmmmmmmmso.........',
+  '.........oLmmmmmmmmmmso.........',
+  '.........odssssssssssdo.........',
+  '.........oddddddddddddo.........',
+  '.........odLLLd.dLLLLdo.........',
+  '.........oLmmms.Lmmmmso.........',
+  '.........oLmmms.Lmmmmso.........',
+  '.........oLmmms.Lmmmmso.........',
+  '.........odsssd.dssssdo.........',
+  '.........oddddddddddddo.........',
+  '.........odLLLLLLLLLLdo.........',
+  '.........oLmmmmmmmmmmso.........',
+  '.........oLgGmmmmmmmmso.........',
+  '.........odGgssssssssdo.........',
+  '.........oooooooooooooo.........',
+]
+
+/* ------------------------------------------------------------------ */
 /* Bank                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -208,9 +291,13 @@ export const cozySprites: {
   picnicBlanket: PixelSprite
   mailbox: PixelSprite
   beeSkep: PixelSprite
+  stoneWall: PixelSprite
+  stonePost: PixelSprite
 } = {
   bench: { palette: BENCH_PALETTE, frames: [BENCH], frameMs: 1000 },
   picnicBlanket: { palette: PICNIC_BLANKET_PALETTE, frames: [PICNIC_BLANKET], frameMs: 1000 },
   mailbox: { palette: MAILBOX_PALETTE, frames: [MAILBOX], frameMs: 1000 },
   beeSkep: { palette: BEE_SKEP_PALETTE, frames: [BEE_SKEP], frameMs: 1000 },
+  stoneWall: { palette: STONE_PALETTE, frames: [STONE_WALL], frameMs: 1000 },
+  stonePost: { palette: STONE_PALETTE, frames: [STONE_POST], frameMs: 1000 },
 }

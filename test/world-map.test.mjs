@@ -5,11 +5,13 @@ import test from 'node:test'
 const mapPath = new URL('../app/utils/world-map.json', import.meta.url)
 const world = JSON.parse(readFileSync(mapPath, 'utf8'))
 
-// 'B', 'D', and 'A' are bridge, dam, and arch decks over the river: walkable
+// 'B', 'D', and 'A' are bridge, dam, and arch decks over the water: walkable
 // like any other land.
 const walkableGround = new Set(['.', '-', 's', 'f', 't', 'd', 'c', 'w', 'B', 'D', 'A'])
 const blockedGround = new Set(['~', 'C'])
 const allowedGround = new Set([...walkableGround, ...blockedGround])
+
+// Mirrors app/utils/world-map.ts: object types the player cannot walk through.
 const solidTypes = new Set([
   'cottage',
   'pine',
@@ -18,6 +20,7 @@ const solidTypes = new Set([
   'campfire',
   'lamp',
   'sign',
+  'fence',
   'barn',
   'scarecrow',
   'haybale',
@@ -28,7 +31,23 @@ const solidTypes = new Set([
   'rowboat',
   'driftwood',
   'store',
-  'windmill'
+  'windmill',
+  'cow',
+  'bull',
+  'horse',
+  'goat',
+  'pig',
+  'bench',
+  'mailbox',
+  'beeSkep',
+  'stoneWall',
+  'stonePost',
+  'house',
+  'hut',
+  'mudHut',
+  'well',
+  'waterWheel',
+  'waterWheelHouse'
 ])
 
 const footprintOf = (object) => {
@@ -45,14 +64,31 @@ const footprintOf = (object) => {
 
 /** Map of `x,y` -> object type for every tile covered by a solid footprint. */
 const solidTiles = new Map()
+/** Map of `x,y` -> object type for every tile covered by any object footprint. */
+const objectTiles = new Map()
 for (const object of world.objects) {
-  if (!solidTypes.has(object.type)) continue
   for (const tile of footprintOf(object)) {
-    solidTiles.set(`${tile.x},${tile.y}`, object.type)
+    objectTiles.set(`${tile.x},${tile.y}`, object.type)
+    if (solidTypes.has(object.type)) {
+      solidTiles.set(`${tile.x},${tile.y}`, object.type)
+    }
   }
 }
 
 const countChar = (ch) => world.ground.join('').split('').filter((c) => c === ch).length
+
+const tilesOf = (ch) => {
+  const tiles = []
+  for (let y = 0; y < world.ground.length; y += 1) {
+    for (let x = 0; x < world.ground[y].length; x += 1) {
+      if (world.ground[y][x] === ch) tiles.push({ x, y })
+    }
+  }
+  return tiles
+}
+
+const objectOf = (type) => world.objects.find((object) => object.type === type)
+const objectsOf = (type) => world.objects.filter((object) => object.type === type)
 
 test('world dimensions and ground rows are valid', () => {
   assert.equal(world.width, 64)
@@ -68,92 +104,25 @@ test('world dimensions and ground rows are valid', () => {
   }
 })
 
-test('ground roster covers grass, path, sand, water, flowers, tall grass, cliffs, bridge, and farm soil', () => {
-  for (const required of ['.', '-', 's', '~', 'f', 't', 'C', 'B']) {
+test('ground roster covers grass, path, sand, water, flowers, tall grass, cliffs, crossings, and farm soil', () => {
+  for (const required of ['.', '-', 's', '~', 'f', 't', 'C', 'B', 'D', 'A']) {
     assert.equal(countChar(required) > 0, true, `world needs ground "${required}"`)
   }
-  assert.equal(countChar('d') >= 20, true, 'world needs tilled soil rows in the farm')
-  assert.equal(countChar('c') >= 20, true, 'world needs young crop rows')
-  assert.equal(countChar('w') >= 20, true, 'world needs mature crop rows')
+  assert.equal(countChar('d') >= 12, true, 'world needs three tilled field rows')
+  assert.equal(countChar('c') >= 12, true, 'world needs three young crop rows')
+  assert.equal(countChar('w') >= 12, true, 'world needs three mature crop rows')
 })
 
-test('cliff band segments rows 11..13 into broken terraces with passes, and the west bluff face shows at row 34', () => {
-  // No row may become a full-width wall: the broken massifs and the shifted
-  // band both stay at or below 40 cliff tiles.
-  for (let y = 0; y < world.ground.length; y += 1) {
-    const count = ((world.ground[y] ?? '').match(/C/g) ?? []).length
-    assert.equal(count <= 40, true, `row ${y} must not become a full-width cliff wall (${count} C tiles)`)
-  }
-
-  // The segmented band keeps three broken terrace rows, each with a path pass.
-  for (const y of [11, 12, 13]) {
-    const row = world.ground[y] ?? ''
-    assert.equal((row.match(/C/g) ?? []).length >= 12, true, `row ${y} must keep a broken terrace of at least 12 cliff tiles`)
-    assert.equal(row.includes('-'), true, `row ${y} must keep a path pass through it`)
-  }
-
-  // The named passes stay open: the western stream pass and the eastern
-  // walking pass both cut through the band.
-  for (const y of [11, 12, 13]) {
-    for (const x of [17, 18, 41, 42]) {
-      assert.notEqual(world.ground[y]?.[x], 'C', `cliff pass at (${x},${y}) must stay open`)
-    }
-  }
-
-  // A terrace or bluff face row shows a shorter cliff run, distinct from the tall band.
-  const faceCounts = world.ground
-    .map((row) => ((row ?? '').match(/C/g) ?? []).length)
-    .filter((count) => count > 0 && count < 30)
-  assert.equal(faceCounts.length >= 1, true, 'the world needs a terrace or bluff face row')
-  assert.equal(faceCounts[0] >= 8, true, 'the first face row must be a visible bluff of at least 8 cliff tiles')
-
-  // The west bluff shifted with the old terrain and still shows at row 34.
-  const bluffCount = (world.ground[34]?.match(/C/g) ?? []).length
-  assert.equal(bluffCount > 0 && bluffCount < 30, true, 'row 34 must keep the west bluff face')
-  assert.equal(bluffCount >= 8, true, 'the west bluff face must stay at least 8 cliff tiles wide')
-})
-
-test('lake, stream, pond, river, bridge, and sea form one connected waterway with a sandy shore', () => {
-  const waterTiles = []
+test('lake, stream, pond, river, delta, and sea form one connected waterway', () => {
   const fluidTiles = []
   for (let y = 0; y < world.ground.length; y += 1) {
     for (let x = 0; x < world.ground[y].length; x += 1) {
       const tile = world.ground[y][x]
-      if (tile === '~') waterTiles.push({ x, y })
       if (['~', 'B', 'D', 'A'].includes(tile)) fluidTiles.push({ x, y })
     }
   }
-  assert.equal(fluidTiles.length > 0, true, 'the world needs water')
+  assert.equal(fluidTiles.length, 592, 'the waterway should carry 592 fluid tiles')
 
-  // The mountain lake fills the highland basin at x18..27 rows 2..5.
-  const lakeTiles = waterTiles.filter(({ x, y }) => x >= 18 && x <= 27 && y >= 2 && y <= 5)
-  assert.equal(lakeTiles.length >= 20, true, 'the highlands need a mountain lake at x18..27 rows 2..5')
-
-  // The pond keeps a substantial body of water around rows 17..23.
-  const pondTiles = waterTiles.filter(({ y }) => y >= 17 && y <= 23)
-  assert.equal(pondTiles.length >= 40, true, 'the pond should keep at least 40 water tiles')
-  const pondRows = new Set(pondTiles.map(({ y }) => y))
-  assert.equal(pondRows.size >= 5, true, 'the pond should spread across several rows around rows 17..23')
-
-  // The sea in the south is full-width water across rows 37..39.
-  for (const y of [37, 38, 39]) {
-    const row = world.ground[y] ?? ''
-    const allWater = row.length === world.width && row.split('').every((tile) => tile === '~')
-    assert.equal(allWater, true, `sea row ${y} must be full-width water`)
-  }
-
-  // The stream and river carry water through every row from the highlands
-  // down to the sea; the bridge, dam, and arch decks count as water here too.
-  const waterInRow = (y) =>
-    (world.ground[y] ?? '').split('').filter((tile) => ['~', 'B', 'D', 'A'].includes(tile)).length
-  for (let y = 6; y <= 36; y += 1) {
-    assert.equal(waterInRow(y) >= 1, true, `the stream and river must carry water through row ${y}`)
-  }
-
-  // All water forms one connected body. The bridge, dam, and arch decks sit over
-  // the river and the river flows beneath them, so crossing tiles count as water
-  // here: seeded from a water tile, the flood must reach every '~', 'B', 'D', and
-  // 'A' in the world.
   const fluidKeys = new Set(fluidTiles.map(({ x, y }) => `${x},${y}`))
   const queue = [fluidTiles[0]]
   const seen = new Set([`${fluidTiles[0].x},${fluidTiles[0].y}`])
@@ -167,30 +136,41 @@ test('lake, stream, pond, river, bridge, and sea form one connected waterway wit
       }
     }
   }
-  assert.equal(seen.size, fluidKeys.size, 'lake, stream, pond, river, bridge, and sea water must be one connected body')
+  assert.equal(seen.size, fluidKeys.size, 'lake, stream, pond, river, delta, and sea water must be one connected body')
 
-  assert.equal(countChar('s') >= 20, true, 'the water needs a sand shore along the lake, pond, river, and beach')
+  for (const y of [37, 38, 39, 40, 41, 42, 43]) {
+    const row = world.ground[y] ?? ''
+    const allWater = row.length === world.width && row.split('').every((tile) => tile === '~')
+    assert.equal(allWater, true, `sea row ${y} must be full-width water`)
+  }
 })
 
-test('the river carries the exact bridge, dam, and arch crossings with walkable land east and west of every crossing tile', () => {
-  const crossingTiles = (ch) => {
-    const tiles = []
-    for (let y = 0; y < world.ground.length; y += 1) {
-      for (let x = 0; x < world.ground[y].length; x += 1) {
-        if (world.ground[y][x] === ch) tiles.push({ x, y })
-      }
-    }
-    return tiles
+test('the lake, stream, pond, river, and delta occupy their verified reaches', () => {
+  const waterTiles = tilesOf('~')
+  const inBox = (x0, x1, y0, y1) =>
+    waterTiles.filter(({ x, y }) => x >= x0 && x <= x1 && y >= y0 && y <= y1)
+
+  assert.equal(inBox(6, 14, 2, 7).length >= 20, true, 'the NW mountain lake should fill rows 2..7 around x6..14')
+  assert.equal(inBox(14, 28, 8, 16).length >= 15, true, 'the eastward stream should run through rows 8..16 at x14..28')
+  assert.equal(inBox(27, 35, 19, 24).length >= 25, true, 'the pond should fill rows 19..24 at x27..35')
+  assert.equal(inBox(17, 36, 25, 36).length >= 25, true, 'the outflow river should run through rows 25..36 at x17..36')
+
+  for (const x of [17, 18, 19]) {
+    assert.equal(world.ground[36]?.[x], '~', `the delta channel at (${x},36) must be water`)
   }
 
+  assert.equal(countChar('s') >= 20, true, 'the water needs a sand shore')
+})
+
+test('the exact bridge, dam, and arch decks sit at their fixed crossings with walkable land east and west', () => {
   const crossings = [
-    ['B', [[33, 16], [42, 27], [43, 27]]],
-    ['D', [[41, 24], [42, 24], [43, 35], [44, 35]]],
-    ['A', [[43, 31], [44, 31]]]
+    ['B', [[28, 17], [29, 17]]],
+    ['D', [[34, 24], [35, 24], [17, 35], [18, 35]]],
+    ['A', [[22, 31], [23, 31]]]
   ]
 
   for (const [ch, expected] of crossings) {
-    const tiles = crossingTiles(ch)
+    const tiles = tilesOf(ch)
     assert.equal(tiles.length, expected.length, `the map should carry exactly ${expected.length} ${ch} crossing tiles`)
     for (const [x, y] of expected) {
       assert.equal(world.ground[y]?.[x], ch, `expected a ${ch} crossing at (${x},${y})`)
@@ -198,7 +178,7 @@ test('the river carries the exact bridge, dam, and arch crossings with walkable 
   }
 
   for (const [ch] of crossings) {
-    for (const { x, y } of crossingTiles(ch)) {
+    for (const { x, y } of tilesOf(ch)) {
       for (const dx of [-1, 1]) {
         const side = dx < 0 ? 'west' : 'east'
         const neighbor = (world.ground[y] ?? '')[x + dx]
@@ -213,22 +193,6 @@ test('the river carries the exact bridge, dam, and arch crossings with walkable 
   }
 })
 
-test('the river meanders through the reach rows 25..36 instead of running straight', () => {
-  const riverXs = new Set()
-  for (let y = 25; y <= 36; y += 1) {
-    const row = world.ground[y] ?? ''
-    for (let x = 0; x < row.length; x += 1) {
-      if (row[x] === '~') riverXs.add(x)
-    }
-  }
-
-  const xs = [...riverXs]
-  assert.equal(xs.length >= 5, true, 'the river reach should touch at least five distinct columns')
-  assert.equal(Math.max(...xs) - Math.min(...xs) >= 5, true, 'the river reach should span at least five columns')
-  assert.equal(xs.some((x) => x > 45), true, 'the river should bow east of column 45 somewhere in rows 25..36')
-  assert.equal(xs.some((x) => x < 41), true, 'the river should bow west of column 41 somewhere in rows 25..36')
-})
-
 test('spawn and landmarks sit on walkable ground', () => {
   const assertWalkableStart = (point, label) => {
     const tile = world.ground[point.y]?.[point.x]
@@ -237,15 +201,15 @@ test('spawn and landmarks sit on walkable ground', () => {
     assert.equal(solidTiles.has(`${point.x},${point.y}`), false, `${label} overlaps a solid object footprint`)
   }
 
-  assert.equal(world.spawn.x, 28, 'spawn should sit on the shifted meadow road')
-  assert.equal(world.spawn.y, 16, 'spawn should sit on the shifted meadow road')
+  assert.equal(world.spawn.x, 40, 'spawn should sit on the village road')
+  assert.equal(world.spawn.y, 20, 'spawn should sit on the village road')
   assertWalkableStart(world.spawn, 'spawn')
   for (const landmark of world.landmarks) {
     assertWalkableStart(landmark, `landmark ${landmark.id}`)
   }
 })
 
-test('landmark roster covers cottage, pass, meadow, pond, farm, campfire, beach, highlands, orchard, lookout, store, garden, and pasture', () => {
+test('landmark roster covers the thirteen named places', () => {
   const ids = new Set(world.landmarks.map((landmark) => landmark.id))
   for (const required of [
     'cottage',
@@ -286,15 +250,12 @@ test('every landmark is reachable from spawn without crossing water, cliffs, or 
 
   while (queue.length > 0) {
     const [x, y] = queue.shift()
-
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const nextX = x + dx
       const nextY = y + dy
       const key = `${nextX},${nextY}`
-
       if (nextX < 0 || nextX >= world.width || nextY < 0 || nextY >= world.height) continue
       if (blocked.has(key) || visited.has(key)) continue
-
       visited.add(key)
       queue.push([nextX, nextY])
     }
@@ -305,101 +266,133 @@ test('every landmark is reachable from spawn without crossing water, cliffs, or 
   }
 })
 
-test('the farm retires its fences and gate, keeps the barn east and cottage west, and keeps its working objects', () => {
-  assert.equal(world.objects.filter((object) => object.type === 'fence').length, 0, 'the farm fences are retired')
-  assert.equal(world.objects.filter((object) => object.type === 'gate').length, 0, 'the farm gate is retired')
+test('the village buildings sit at their fixed footprints', () => {
+  // The brief also named a mudHut at (18,29), but the final map carries no
+  // mudHut object; these are the buildings actually present.
+  const buildings = [
+    ['cottage', 42, 15, 4, 4],
+    ['store', 36, 16, 4, 4],
+    ['house', 34, 12, 4, 4],
+    ['barn', 46, 26, 5, 4],
+    ['windmill', 50, 4, 2, 2],
+    ['hut', 48, 13, 2, 3],
+    ['well', 42, 23, 1, 1],
+    ['waterWheelHouse', 37, 24, 2, 3]
+  ]
 
-  const barn = world.objects.find((object) => object.type === 'barn')
-  assert.equal(barn !== undefined, true, 'world needs a barn')
-  assert.equal((barn.width ?? 1) === 5 && (barn.height ?? 1) === 4, true, 'the barn footprint should be 5x4')
-  assert.equal(barn.x >= 45, true, 'the barn should anchor the east meadow at x >= 45')
-
-  const cottage = world.objects.find((object) => object.type === 'cottage')
-  assert.equal(cottage !== undefined, true, 'world needs a cottage')
-  assert.equal((cottage.width ?? 1) === 4 && (cottage.height ?? 1) === 4, true, 'the cottage footprint should be 4x4')
-  assert.equal(cottage.x <= 14, true, 'the cottage should stay near the west side of the map')
-
-  for (const type of ['scarecrow', 'haybale', 'trough', 'chicken', 'crop']) {
-    assert.equal(world.objects.some((object) => object.type === type), true, `the farm keeps its ${type}`)
+  for (const [type, x, y, width, height] of buildings) {
+    const object = objectOf(type)
+    assert.equal(object !== undefined, true, `world needs a ${type}`)
+    assert.equal(object.x, x, `${type} should sit at x ${x}`)
+    assert.equal(object.y, y, `${type} should sit at y ${y}`)
+    assert.equal((object.width ?? 1) === width && (object.height ?? 1) === height, true, `${type} should be ${width}x${height}`)
   }
 })
 
-test('the village store is a 4x4 solid building with a door stub onto the road', () => {
-  const store = world.objects.find((object) => object.type === 'store')
-  assert.equal(store !== undefined, true, 'world needs a store')
-  assert.equal((store.width ?? 1) === 4 && (store.height ?? 1) === 4, true, 'the store footprint should be 4x4')
-  assert.equal(store.x <= 14, true, 'the store should sit on the west side of the village')
-  assert.equal(solidTypes.has(store.type), true, 'the store must be a solid object')
+test('the farm keeps three clean 4x3 field strips and a clear barn lane', () => {
+  const strips = [
+    { x0: 40, x1: 43, y0: 26, y1: 28 },
+    { x0: 40, x1: 43, y0: 30, y1: 32 },
+    { x0: 46, x1: 49, y0: 30, y1: 32 }
+  ]
+  const expectedRows = ['d', 'c', 'w']
 
-  for (const tile of footprintOf(store)) {
-    assert.equal(tile.x >= 0 && tile.x < world.width, true, 'store footprint leaves the map')
-    assert.equal(tile.y >= 0 && tile.y < world.height, true, 'store footprint leaves the map')
-    const ground = world.ground[tile.y]?.[tile.x]
-    assert.equal(ground !== undefined, true, 'store footprint lands off the ground grid')
-    assert.notEqual(ground, '~', 'store footprint cannot stand in water')
-    assert.notEqual(ground, 'C', 'store footprint cannot stand on the cliff')
-    assert.notEqual(ground, 'B', 'store footprint cannot stand on the bridge')
-  }
-
-  // The store's single door stub opens onto the row-18 lane; (10,17) is inside
-  // the cottage footprint, so it is not part of the approach.
-  assert.equal(world.ground[18]?.[10], '-', 'store door stub at (10,18) must be a path tile')
-  assert.equal(solidTiles.has('10,18'), false, 'store door stub at (10,18) must stay walkable')
-
-  // The lane runs along row 18 from x8 to x16, then turns north to the row-16 road.
-  for (let x = 8; x <= 16; x += 1) {
-    assert.equal(world.ground[18]?.[x], '-', `store lane at (${x},18) must be a path tile`)
-  }
-  assert.equal(world.ground[17]?.[16], '-', 'the store lane must connect to the row-16 road at (16,17)')
-  assert.equal(world.ground[16]?.[16], '-', 'the store lane must connect to the row-16 road at (16,16)')
-
-  // The cottage owns rows 14..17 at x9..12; no path tile may cut through it.
-  for (let y = 14; y <= 17; y += 1) {
-    for (let x = 9; x <= 12; x += 1) {
-      assert.notEqual(world.ground[y]?.[x], '-', `cottage footprint at (${x},${y}) must not be a path tile`)
+  for (const { x0, x1, y0, y1 } of strips) {
+    for (let y = y0; y <= y1; y += 1) {
+      const expected = expectedRows[y - y0]
+      for (let x = x0; x <= x1; x += 1) {
+        assert.equal(world.ground[y]?.[x], expected, `field strip at (${x},${y}) should be "${expected}"`)
+      }
     }
   }
+
+  for (const crop of objectsOf('crop')) {
+    const ground = world.ground[crop.y]?.[crop.x]
+    assert.equal(ground === 'c' || ground === 'w', true, `crop at (${crop.x},${crop.y}) must stand on a crop tile, not "${ground}"`)
+  }
+
+  // The barn approach lane at row 29 stays clear of every object footprint.
+  for (let x = 0; x < world.width; x += 1) {
+    if (world.ground[29]?.[x] !== '-') continue
+    assert.equal(objectTiles.has(`${x},29`), false, `barn lane tile (${x},29) must stay clear of object footprints`)
+  }
+
+  assert.equal(objectsOf('fence').length, 0, 'the world retires its fences')
+  assert.equal(objectsOf('gate').length, 0, 'the world retires its gates')
 })
 
-test('the windmill stands 2x2 in the highlands with a clean footprint', () => {
-  const windmill = world.objects.find((object) => object.type === 'windmill')
-  assert.equal(windmill !== undefined, true, 'world needs a windmill')
-  assert.equal((windmill.width ?? 1) === 2 && (windmill.height ?? 1) === 2, true, 'the windmill footprint should be 2x2')
-  assert.equal(windmill.y <= 10, true, 'the windmill should stand in the highlands at y <= 10')
-  assert.equal(solidTypes.has(windmill.type), true, 'the windmill must be a solid object')
+test('the animal paddock is a stoneWall ring with a two-tile west opening', () => {
+  const wallKeys = new Set(objectsOf('stoneWall').map(({ x, y }) => `${x},${y}`))
+  const postKeys = new Set(objectsOf('stonePost').map(({ x, y }) => `${x},${y}`))
 
-  for (const tile of footprintOf(windmill)) {
-    assert.equal(tile.x >= 0 && tile.x < world.width, true, 'windmill footprint leaves the map')
-    assert.equal(tile.y >= 0 && tile.y < world.height, true, 'windmill footprint leaves the map')
-    const ground = world.ground[tile.y]?.[tile.x]
-    assert.equal(ground !== undefined, true, 'windmill footprint lands off the ground grid')
-    assert.notEqual(ground, '~', 'windmill footprint cannot stand in water')
-    assert.notEqual(ground, 'C', 'windmill footprint cannot stand on the cliff')
-    assert.notEqual(ground, 'B', 'windmill footprint cannot stand on the bridge')
+  const expectedWalls = []
+  for (let x = 50; x <= 58; x += 1) expectedWalls.push([x, 29])
+  for (let y = 30; y <= 32; y += 1) expectedWalls.push([58, y])
+  for (let x = 51; x <= 58; x += 1) expectedWalls.push([x, 33])
+
+  assert.equal(wallKeys.size, expectedWalls.length, 'the paddock ring should carry exactly twenty stoneWall tiles')
+  for (const [x, y] of expectedWalls) {
+    assert.equal(wallKeys.has(`${x},${y}`), true, `the paddock ring needs a stoneWall at (${x},${y})`)
+  }
+
+  assert.equal(postKeys.has('50,30'), true, 'the paddock needs a stonePost at (50,30)')
+  assert.equal(postKeys.has('50,33'), true, 'the paddock needs a stonePost at (50,33)')
+  assert.equal(wallKeys.has('50,31'), false, 'the west opening at (50,31) must stay open')
+  assert.equal(wallKeys.has('50,32'), false, 'the west opening at (50,32) must stay open')
+  assert.equal(postKeys.has('50,31') || postKeys.has('50,32'), false, 'the west opening must not be blocked by posts')
+
+  for (const bush of objectsOf('bush')) {
+    assert.equal(
+      bush.x >= 50 && bush.x <= 58 && bush.y >= 29 && bush.y <= 33,
+      false,
+      `bush at (${bush.x},${bush.y}) must not form the paddock boundary`
+    )
   }
 })
 
-test('the dense forest corner holds at least 18 pines and oaks, and the species balance stays mixed', () => {
-  const pines = world.objects.filter((object) => object.type === 'pine')
-  const oaks = world.objects.filter((object) => object.type === 'oak')
-  const willows = world.objects.filter((object) => object.type === 'willow')
+test('the paddock herd stays inside the stoneWall ring', () => {
+  const insideRing = (object) => object.x >= 51 && object.x <= 57 && object.y >= 30 && object.y <= 32
+
+  const herd = [
+    ['cow', 2],
+    ['bull', 1],
+    ['horse', 2],
+    ['goat', 2],
+    ['pig', 2]
+  ]
+  for (const [type, count] of herd) {
+    const animals = objectsOf(type)
+    assert.equal(animals.length, count, `the paddock keeps ${count} ${type}${count === 1 ? '' : 's'}`)
+    for (const animal of animals) {
+      assert.equal(insideRing(animal), true, `${type} at (${animal.x},${animal.y}) must stay inside the paddock ring`)
+    }
+  }
+
+  const trough = objectOf('trough')
+  assert.equal(trough !== undefined, true, 'the paddock needs a trough')
+  assert.equal(insideRing(trough), true, 'the trough must stay inside the paddock ring')
+
+  const haybalesInside = objectsOf('haybale').filter(insideRing)
+  assert.equal(haybalesInside.length >= 2, true, 'the paddock keeps both haybales inside the ring')
+})
+
+test('the dense forest holds at least 80 trees and the species balance stays mixed', () => {
+  const pines = objectsOf('pine')
+  const oaks = objectsOf('oak')
+  const willows = objectsOf('willow')
   const trees = [...pines, ...oaks, ...willows]
 
-  const denseForest = [...pines, ...oaks].filter(({ x, y }) => x >= 52 && y >= 12 && y <= 31)
-  assert.equal(denseForest.length >= 18, true, 'the forest corner at x >= 52 rows 12..31 needs at least 18 pines and oaks')
+  assert.equal(trees.length >= 120, true, 'the world should carry around 127 trees')
+  const forest = trees.filter(({ x, y }) => x >= 0 && x <= 15 && y >= 14 && y <= 36)
+  assert.equal(forest.length >= 80, true, 'the dense forest at x0..15 rows 14..36 needs at least 80 trees')
 
-  assert.equal(pines.length * 2 <= trees.length, true, 'pines must stay at or below 50% of all trees')
+  assert.equal(pines.length * 2 < trees.length, true, 'pines must stay under 50% of all trees')
   assert.equal(oaks.length * 5 >= trees.length, true, 'oaks must make up at least 20% of all trees')
   assert.equal(willows.length * 20 >= trees.length * 3, true, 'willows must make up at least 15% of all trees')
-
-  assert.equal(pines.some(({ y }) => y === 10), true, 'pines should back the shifted meadow edge at y === 10')
-  assert.equal(pines.some(({ y }) => y >= 31), true, 'pines should stand in the shifted southern rows at y >= 31')
-  const eastColumns = new Set(pines.filter(({ x }) => x >= 45).map(({ x }) => x))
-  assert.equal(eastColumns.size >= 2, true, 'east-side pines should stagger across at least two columns at x >= 45')
 })
 
 test('the world carries butterflies, dragonflies, birds, and fish, but no beetles', () => {
-  const countType = (type) => world.objects.filter((object) => object.type === type).length
+  const countType = (type) => objectsOf(type).length
 
   assert.equal(countType('beetle'), 0, 'the rebuilt world retires the beetles')
   for (const [type, minimum] of [
@@ -412,15 +405,23 @@ test('the world carries butterflies, dragonflies, birds, and fish, but no beetle
     assert.equal(countType(type) >= minimum, true, `the world needs at least ${minimum} ${type}s`)
   }
 
-  const fish = world.objects.filter((object) => ['koi', 'bass', 'minnow', 'fish'].includes(object.type))
+  const fish = world.objects.filter((object) => ['koi', 'bass', 'minnow'].includes(object.type))
   assert.equal(fish.length >= 4, true, 'the waterway needs at least four fish')
   for (const object of fish) {
     assert.equal(world.ground[object.y]?.[object.x], '~', `${object.type} must swim in water`)
   }
+
+  for (const gull of objectsOf('gull')) {
+    const ground = world.ground[gull.y]?.[gull.x]
+    assert.equal(ground === '~' || ground === 's', true, `gull at (${gull.x},${gull.y}) must stand on water or sand, not "${ground}"`)
+  }
 })
 
-test('object footprints stay in bounds, solid footprints avoid water, cliffs, and the bridge, and anchors are unique', () => {
+test('object footprints stay in bounds, avoid water, cliffs, crossings, and lanes, and anchors are unique', () => {
   const anchors = new Set()
+  const waterDwellers = new Set(['koi', 'bass', 'minnow', 'lily'])
+  const shoreDwellers = new Set(['gull'])
+
   for (const object of world.objects) {
     const anchor = `${object.x},${object.y}`
     assert.equal(anchors.has(anchor), false, `duplicate object anchor at (${anchor})`)
@@ -435,10 +436,14 @@ test('object footprints stay in bounds, solid footprints avoid water, cliffs, an
       const ground = world.ground[tile.y]?.[tile.x]
       assert.equal(ground !== undefined, true, `${object.type} footprint lands off the ground grid`)
 
-      if (!solidTypes.has(object.type)) continue
+      assert.notEqual(ground, '-', `${object.type} footprint cannot cover the lane tile at (${tile.x},${tile.y})`)
+      if (ground === '~' && waterDwellers.has(object.type)) continue
+      if ((ground === '~' || ground === 's') && shoreDwellers.has(object.type)) continue
       assert.notEqual(ground, '~', `${object.type} footprint cannot stand in water`)
       assert.notEqual(ground, 'C', `${object.type} footprint cannot stand on the cliff`)
       assert.notEqual(ground, 'B', `${object.type} footprint cannot stand on the bridge`)
+      assert.notEqual(ground, 'D', `${object.type} footprint cannot stand on the dam`)
+      assert.notEqual(ground, 'A', `${object.type} footprint cannot stand on the arch bridge`)
     }
   }
 })

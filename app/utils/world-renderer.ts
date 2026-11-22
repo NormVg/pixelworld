@@ -201,8 +201,11 @@ const DEFAULT_FRAME_MS = 240
 const ROW_COMPRESS = 1
 const SHEAR_PX_PER_TILE = 0
 
-/** How far the water wheel sinks below its tile-bottom anchor, in world px. */
-const WATER_WHEEL_SINK_PX = 14
+/** How far the water wheel sinks below its tile-bottom anchor, in world px.
+ * At 28px the waterline crosses just under the hub, so the lower half of the
+ * paddle circle turns through the water and the stone plinth stands submerged
+ * in the outflow, the way a working mill wheel is mounted. */
+const WATER_WHEEL_SINK_PX = 56
 
 /** Character the map uses for water; also the pond fish live in. */
 const WATER_CHAR = '~'
@@ -254,6 +257,7 @@ const PROP_SCHEDULES: Readonly<Record<string, WorldAnimationIdKey>> = {
   lamp: 'lampGlow',
   windmill: 'windmill',
   waterWheel: 'waterWheel',
+  waterWheelHouse: 'waterWheel',
 }
 
 /**
@@ -347,6 +351,12 @@ const SHADOW_PROFILES: Readonly<Record<string, ShadowProfile>> = {
   waterWheel: { rxFactor: 0.6, minRxTiles: 0.7, ryTiles: 0.28, coreShare: 0.7, lean: 0.15, dabAlpha: 0.3, contactAlpha: 0.4 },
   well: { rxFactor: 0.62, minRxTiles: 0.55, ryTiles: 0.16, coreShare: 0.72, lean: 0.1, dabAlpha: 0.28, contactAlpha: 0.38 },
   cottage: { rxFactor: 0.6, minRxTiles: 0.65, ryTiles: 0.22, coreShare: 0.78, lean: 0.08, dabAlpha: 0.3, contactAlpha: 0.4 },
+  house: { rxFactor: 0.6, minRxTiles: 0.65, ryTiles: 0.22, coreShare: 0.78, lean: 0.08, dabAlpha: 0.3, contactAlpha: 0.4 },
+  hut: { rxFactor: 0.6, minRxTiles: 0.6, ryTiles: 0.2, coreShare: 0.75, lean: 0.1, dabAlpha: 0.3, contactAlpha: 0.4 },
+  mudHut: { rxFactor: 0.6, minRxTiles: 0.6, ryTiles: 0.2, coreShare: 0.75, lean: 0.1, dabAlpha: 0.3, contactAlpha: 0.4 },
+  waterWheelHouse: { rxFactor: 0.62, minRxTiles: 0.7, ryTiles: 0.22, coreShare: 0.75, lean: 0.1, dabAlpha: 0.3, contactAlpha: 0.4 },
+  stoneWall: { rxFactor: 0.8, minRxTiles: 0.8, ryTiles: 0.12, coreShare: 0.8, lean: 0.05, dabAlpha: 0.26, contactAlpha: 0.36 },
+  stonePost: { rxFactor: 0.62, minRxTiles: 0.5, ryTiles: 0.14, coreShare: 0.72, lean: 0.1, dabAlpha: 0.28, contactAlpha: 0.38 },
   // Fence pieces overlap into one continuous line under a run.
   fence: { rxFactor: 0.55, minRxTiles: 0.85, ryTiles: 0.13, coreShare: 0.8, lean: 0.05, dabAlpha: 0.26, contactAlpha: 0.36 },
   gate: { rxFactor: 0.58, minRxTiles: 0.75, ryTiles: 0.16, coreShare: 0.8, lean: 0.06, dabAlpha: 0.28, contactAlpha: 0.38 },

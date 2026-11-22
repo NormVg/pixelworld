@@ -3,47 +3,47 @@
   "height": 44,
   "tileSize": 32,
   "spawn": {
-    "x": 28,
-    "y": 16
+    "x": 40,
+    "y": 20
   },
   "ground": [
-    "....CCC..CCC..C...............CCC....CCC....CC...........t......",
-    "....CCCC.CCCC.CCf....t~~~t....CCCC...CCCC...CCCf..........t.....",
-    ".....CCC..CCC......t~~~~~~...t.CCC....CCC....CC.t....t.t.t......",
-    "..ff....ff..tt..f.~~~~~~~~~...f....t......f....t.f......t..t....",
-    ".ff....ff....ff....~~~~~~~~~......f......--t--....t.....t..t....",
-    "tt....ff...tt...t...~~~~~~~t.ft..........-----............t...t.",
-    ".....tt...ff........t..~~~..t............--.....t..tt........t..",
-    "....ff...tt..f.........t~~~..............--.......f.......--....",
-    "...tt...ff...f..........~~t....f...t.....--.f...........--..-..t",
-    "..ff...tt...t..f..ff.ff.~~......t........--..t..f.....t-....-...",
-    ".tt...ff...ff...t.ff.ff.t~~~......f......--......t.f...-.....-t.",
-    "......t-CC...C..C-.CCC...CC~CCCCC...CCC------CCCC...CCCC-.t..-..",
-    ".......-CC...C..C-.CCC...CC~CCCCC...CCC------CCCC...CCCC-CC.t-..",
-    ".......-CC...CC..-........t~CCCCC...CCC------CCCC...CCCC-CC..-..",
-    ".......-.....f...-.........~~~~.........f..--....f..t.f.-....-..",
-    ".......-.....------..........t~~~~t........--.....t..f.t-....-..",
-    "---------....--------------------B---------------------------...",
-    "....-..-........-..........-....s~~~~~s.....-...-.f..t.f........",
-    "....-..----------..........-...s~~~~~~~ss...-...-t..f..t.t......",
-    ".f..-.ft..ff...............-..s~~~~~~~~~~s..-...-......f...t....",
-    ".t..fftf...f...............-.ss~~~~~~~~~~~s.-...-.....t......t..",
-    "....ttft..tt.-.............-..ss~~~~~~~~~~..-...-......f.......t",
-    "......tf..t................-....s~~~~~~~~~..-...-...............",
-    "......ft...................-...s.ssssf.~~~s.-...----t..f........",
-    "..ff..tf......ddddd.ddddd..-.fsssssssss.sDD.-....f.t..f.tt......",
-    "..tt..ft....ddddd.d.ddddd..-.........f.--.~~~....t.f...t..tt....",
-    "......tf.t...cccccc..cccc..-...f.f.........~~~~.t.f.t.......t...",
-    "......ft.tt..wwwwww.wwww-----......f..tt..BB.....t.f..f...t...t.",
-    "......tf..t..wwwwww.wwwww..-........f.t.~~~......f..t.f.........",
-    "......ft....cccccc..cccc...-t.......ttt.~s~..t...t.f...t........",
-    ".ff...tf.......f...........-......t....f.~~~.....f..t.f.........",
-    ".tt..fft...f........t......-........f......AA.....t..f.t........",
-    ".....ttf..................t-.......f.......~~~...f..t.f..t......",
-    "...........t....f.....t....-......f....t..~~~.....f..t.....t....",
-    "...ff...CCCCCCCC..t...t....-...t....t...t.~~~~..t...t........t..",
-    "...tt.f.sssssssssssssssssssssssssssssssssssDDsssssssssss.......t",
-    "......t.ssssssssssssssssssssssssssssssssss~~~~~sssssssss........",
+    "CCCCCC..CCCCCCC..............................tCCCCCC-.CCCC.tCCCC",
+    "CCCCCC..CCCCCCC...............................CCCCC.-CCCCCt.CCCC",
+    "CCCCCC..C~~~CCC...............................CCCC.t-.CCCC.fCCCC",
+    "CCCCCC.t~~~~~CCttt......f...fffff.......ttttttCCffff.-CCCCf.CCCC",
+    "CCCCCCt~~~~~~~Ctttfffff...t.fffff.......ttttt.CCffff---CCC..CCCC",
+    "CCCCCC.~~~~~~~Ctttfffff..t..fffff.......ttttt.CCffff..C-CCt.CCCC",
+    "CCCCCC.t~~~~~CCf.fffffftttt.........fffff.....CCfffffff-CCffCCCC",
+    "CCCCCC..t.~~~CC...ff..ftttt.........fffff....tCCCC..fff-CCffCCCC",
+    "CCCCCC...ftt~~~~~.f..f.tttt.........fffff.....CCCCt.ff-fCCffCCCC",
+    "..............t~~~............ttttt..........tCCCC..ff-fCCffCCCC",
+    "..............ft~~~...........ttttt...........CCCC..f-ffCCffCCCC",
+    "..............ttt~~~.t........ttttt..........tCCCC..f-ffCCffCCCC",
+    "..................t~~~..ffff......ffffft.t....CCCC..-fffCCffCCCC",
+    "..................ttf~~~ffff......fffff.t...........--....ft....",
+    "..................tt...~~~ff......ffffffff...........-..........",
+    "......................ttf~~~...........fff....fff....-.t.t.t....",
+    ".tt.ft..t..tt.f.......tt..~~~f....ff...fff....fff....-f.........",
+    ".ft..t..tt.ft..-------------BB----ff..........fftt...-f.........",
+    "..t..tt.ft..t..-..........tt~~~-----....--....ffft...-tftftftff.",
+    "..tt.ft..t..tt.-..........ttt~~~~~ttff..------tttt...-ff....fft.",
+    "t.ft..tt.tt.ft.-..........ft~~~~~~~t------------------f.....ftf.",
+    "t..t..tt.ftt.t.-..........t~~~~~~~~~ff.-------ffft...-tf....tff.",
+    "t.ttt.ft..t..tt-..........t~~~~~~~~~fft-------ffft...--.....fft.",
+    "tttftfft.ttt.ft-.............~~~~~~~tf.-tf.ftfffft....f.....ftf.",
+    "ftt.t-ftttftttt-.............tftftDD...-..............t.....tff.",
+    ".t..tt-ftt.t..t-.................t~~~..-..............f.....fft.",
+    ".tt.ft.-t..tt---..............t.~~~~...-ddddff....tt..f.....ftf.",
+    ".ft..t..-tf--...ff....ttt.ff.~~~~......-ccccff....tt..t.....tff.",
+    "..t..tt.f--ft....f.....t.f~~~~fftt.....-wwwwff....tt..fftftffft.",
+    ".ttt.ft..tfftt..ff.fff.~~~~...ttt......-------....tt..ft.t.t....",
+    "t.ft..t..tt.ft.....ff~~~~..fffttt......-ddddtfddddff............",
+    "tt.t..tttft..t........AA...fff...tt....-cccctfccccffft.ftf......",
+    "tt.tt.ft..t..tt.tt..~~~.........ttt....-wwwwtfwwwwff.....t......",
+    "tt.ft..t..tt.ft..f~~~~........fftt.....-........................",
+    "fts.t.sttsfts.ts.~~~~.ffftttff.fff.....-........................",
+    "sssssssssssssssssDDssssssssssssssssssss-ssssssssssssssssssssssss",
+    "sssssssssssssssss~~~ssssssssssssssssssssssssssssssssssssssssssss",
     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
@@ -55,1860 +55,1825 @@
   "objects": [
     {
       "type": "cottage",
-      "x": 9,
-      "y": 14,
+      "x": 42,
+      "y": 15,
       "width": 4,
       "height": 4,
       "message": "Your cottage. Smoke curls from the chimney, and the kettle hums inside."
     },
     {
-      "type": "sign",
-      "x": 31,
-      "y": 14,
-      "message": "The south road drops to Sunroot Farm and on to the Saltgrass shore; west lies the old orchard, and the north pass climbs to the uplands."
-    },
-    {
-      "type": "lamp",
-      "x": 24,
-      "y": 15
-    },
-    {
-      "type": "lamp",
-      "x": 35,
-      "y": 15
-    },
-    {
-      "type": "lamp",
-      "x": 32,
-      "y": 24,
-      "message": "A little lantern keeps watch over the sandy beach."
-    },
-    {
-      "type": "lamp",
-      "x": 25,
-      "y": 26,
-      "message": "The lamp by the farm gate throws a warm little circle of light."
-    },
-    {
-      "type": "campfire",
-      "x": 40,
-      "y": 27,
-      "message": "The campfire crackles. Two acorn cups sit waiting by the flames."
+      "type": "store",
+      "x": 36,
+      "y": 16,
+      "width": 4,
+      "height": 4,
+      "message": "Flour, seeds, and a jar of pickled plums; the little store smells of cedar and cinnamon."
     },
     {
       "type": "barn",
-      "x": 49,
-      "y": 19,
+      "x": 46,
+      "y": 26,
       "width": 5,
       "height": 4,
       "message": "The red barn smells of hay and warm timber. Swallows nest in the rafters."
     },
     {
-      "type": "scarecrow",
-      "x": 18,
-      "y": 25,
-      "message": "The scarecrow keeps a patched-eye watch over the rows, straw hat tilted against the wind."
-    },
-    {
-      "type": "haybale",
-      "x": 54,
-      "y": 23,
-      "message": "A spare hay bale waits by the barn door."
-    },
-    {
-      "type": "haybale",
-      "x": 26,
-      "y": 25,
-      "message": "A hay bale, sun-warm and slightly itchy."
-    },
-    {
-      "type": "trough",
-      "x": 29,
-      "y": 26,
-      "message": "The water trough ripples; a feather drifts on the surface."
-    },
-    {
-      "type": "chicken",
-      "x": 25,
-      "y": 24,
-      "message": "A speckled hen pecks at the grass, pretending not to see you."
-    },
-    {
-      "type": "chicken",
-      "x": 26,
-      "y": 24
-    },
-    {
-      "type": "chicken",
-      "x": 25,
-      "y": 25
-    },
-    {
-      "type": "crop",
-      "x": 15,
-      "y": 26,
-      "message": "Green sprouts push through the tilled soil in neat little rows."
-    },
-    {
-      "type": "crop",
-      "x": 21,
-      "y": 28,
-      "message": "Golden wheat nods in the breeze, nearly ready for the sickle."
-    },
-    {
-      "type": "pine",
-      "x": 8,
-      "y": 8
-    },
-    {
-      "type": "pine",
-      "x": 8,
-      "y": 14
-    },
-    {
-      "type": "pine",
-      "x": 8,
-      "y": 17
-    },
-    {
-      "type": "pine",
-      "x": 8,
-      "y": 20
-    },
-    {
-      "type": "pine",
-      "x": 8,
-      "y": 26
-    },
-    {
-      "type": "pine",
-      "x": 8,
-      "y": 29
-    },
-    {
-      "type": "pine",
-      "x": 8,
-      "y": 32
-    },
-    {
-      "type": "oak",
-      "x": 14,
-      "y": 19
-    },
-    {
-      "type": "willow",
-      "x": 36,
-      "y": 26
-    },
-    {
-      "type": "bush",
-      "x": 10,
-      "y": 30
-    },
-    {
-      "type": "koi",
-      "x": 34,
-      "y": 19,
-      "message": "A koi loops lazily beneath the surface."
-    },
-    {
-      "type": "koi",
-      "x": 36,
-      "y": 20
-    },
-    {
-      "type": "koi",
-      "x": 38,
-      "y": 18
-    },
-    {
-      "type": "bass",
-      "x": 33,
-      "y": 21
-    },
-    {
-      "type": "bass",
-      "x": 39,
-      "y": 19
-    },
-    {
-      "type": "bass",
-      "x": 40,
-      "y": 22,
-      "message": "A bass hides in the cool shadow of the inlet."
-    },
-    {
-      "type": "butterfly",
-      "x": 27,
-      "y": 9
-    },
-    {
-      "type": "butterfly",
-      "x": 31,
-      "y": 8
-    },
-    {
-      "type": "butterfly",
-      "x": 44,
-      "y": 10
-    },
-    {
-      "type": "lily",
-      "x": 35,
-      "y": 18,
-      "message": "A lily pad bobs, and a koi loops lazily beneath it."
-    },
-    {
-      "type": "lily",
-      "x": 34,
-      "y": 21
-    },
-    {
-      "type": "lily",
-      "x": 35,
-      "y": 22
-    },
-    {
-      "type": "dragonfly",
-      "x": 32,
-      "y": 25,
-      "message": "A dragonfly skims low over the pond bank, wings rattling."
-    },
-    {
-      "type": "dragonfly",
-      "x": 40,
-      "y": 24,
-      "message": "A dragonfly hangs above the warm sand at the water's edge."
-    },
-    {
-      "type": "sparrow",
-      "x": 22,
-      "y": 9,
-      "message": "A sparrow hops through the grass, cocking its head at you."
-    },
-    {
-      "type": "sparrow",
-      "x": 39,
-      "y": 10,
-      "message": "A sparrow dust-bathes in the dry grass, chirring happily."
-    },
-    {
-      "type": "robin",
-      "x": 52,
-      "y": 24,
-      "message": "A robin perches by the barn, quick and bright-breasted."
-    },
-    {
-      "type": "robin",
-      "x": 46,
-      "y": 33,
-      "message": "A robin hunts worms in the soft meadow grass."
-    },
-    {
-      "type": "bass",
-      "x": 32,
-      "y": 38,
-      "message": "A bass hangs in the green sea light, unhurried."
-    },
-    {
-      "type": "bass",
-      "x": 46,
-      "y": 37,
-      "message": "A bass cruises the shallows where the river meets the sea."
-    },
-    {
-      "type": "minnow",
-      "x": 38,
-      "y": 38,
-      "message": "Minnows dart in a silver ribbon through the shallows."
-    },
-    {
-      "type": "minnow",
-      "x": 42,
-      "y": 37,
-      "message": "A minnow swims lazy circles by the river mouth."
-    },
-    {
-      "type": "oak",
-      "x": 17,
-      "y": 8
-    },
-    {
-      "type": "willow",
-      "x": 29,
-      "y": 21
-    },
-    {
-      "type": "willow",
-      "x": 42,
-      "y": 20
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 24
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 22
-    },
-    {
-      "type": "oak",
-      "x": 53,
-      "y": 23
-    },
-    {
-      "type": "pine",
-      "x": 53,
-      "y": 25
-    },
-    {
-      "type": "pine",
-      "x": 55,
-      "y": 26
-    },
-    {
-      "type": "pine",
-      "x": 52,
-      "y": 27
-    },
-    {
-      "type": "oak",
-      "x": 55,
-      "y": 28
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 29
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 8
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 9
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 10
-    },
-    {
-      "type": "pine",
-      "x": 55,
-      "y": 14
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 18
-    },
-    {
-      "type": "pine",
-      "x": 55,
-      "y": 22
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 26
-    },
-    {
-      "type": "pine",
-      "x": 55,
-      "y": 30
-    },
-    {
-      "type": "gull",
-      "x": 36,
-      "y": 34,
-      "message": "A gull rides the wind off the water."
-    },
-    {
-      "type": "gull",
-      "x": 49,
-      "y": 34
-    },
-    {
-      "type": "driftwood",
-      "x": 20,
-      "y": 35
-    },
-    {
-      "type": "driftwood",
-      "x": 41,
-      "y": 36
-    },
-    {
-      "type": "rowboat",
-      "x": 53,
-      "y": 36
-    },
-    {
-      "type": "crate",
-      "x": 31,
-      "y": 35
-    },
-    {
-      "type": "oak",
-      "x": 11,
-      "y": 25
-    },
-    {
-      "type": "oak",
-      "x": 11,
-      "y": 28
-    },
-    {
-      "type": "pine",
-      "x": 52,
-      "y": 25
-    },
-    {
-      "type": "oak",
-      "x": 53,
-      "y": 27
-    },
-    {
-      "type": "rock",
-      "x": 17,
-      "y": 2
-    },
-    {
-      "type": "rock",
-      "x": 16,
-      "y": 3
-    },
-    {
-      "type": "rock",
-      "x": 29,
-      "y": 6
-    },
-    {
-      "type": "rock",
-      "x": 50,
-      "y": 2
-    },
-    {
-      "type": "oak",
-      "x": 18,
-      "y": 2
-    },
-    {
-      "type": "oak",
-      "x": 13,
-      "y": 5
-    },
-    {
-      "type": "oak",
-      "x": 28,
-      "y": 3
-    },
-    {
-      "type": "oak",
-      "x": 35,
-      "y": 6
-    },
-    {
-      "type": "oak",
-      "x": 49,
-      "y": 7
-    },
-    {
-      "type": "pine",
-      "x": 1,
-      "y": 6
-    },
-    {
-      "type": "pine",
-      "x": 17,
-      "y": 1
-    },
-    {
-      "type": "pine",
-      "x": 51,
-      "y": 5
-    },
-    {
-      "type": "sparrow",
-      "x": 12,
-      "y": 4,
-      "message": "A sparrow flits between the highland rocks, chirring at the thin air."
-    },
-    {
-      "type": "robin",
-      "x": 34,
-      "y": 5,
-      "message": "A robin watches the upland meadow from a warm stone."
-    },
-    {
       "type": "windmill",
-      "x": 46,
+      "x": 50,
       "y": 4,
       "width": 2,
       "height": 2,
       "message": "The old windmill creaks round, slow as honey, grinding the morning grain."
     },
     {
-      "type": "oak",
-      "x": 2,
-      "y": 10
-    },
-    {
-      "type": "oak",
-      "x": 5,
-      "y": 12
-    },
-    {
-      "type": "oak",
-      "x": 3,
-      "y": 20
-    },
-    {
-      "type": "oak",
-      "x": 5,
-      "y": 34
-    },
-    {
-      "type": "oak",
-      "x": 4,
-      "y": 36
-    },
-    {
-      "type": "rock",
-      "x": 1,
-      "y": 14
-    },
-    {
-      "type": "rock",
-      "x": 6,
-      "y": 18
-    },
-    {
-      "type": "pine",
-      "x": 0,
-      "y": 8
-    },
-    {
-      "type": "pine",
-      "x": 0,
-      "y": 36
-    },
-    {
-      "type": "butterfly",
-      "x": 2,
-      "y": 12,
-      "message": "A butterfly drifts between the old orchard rows."
-    },
-    {
-      "type": "butterfly",
-      "x": 5,
-      "y": 22
-    },
-    {
-      "type": "dragonfly",
-      "x": 3,
-      "y": 28,
-      "message": "A dragonfly stitches the orchard air, wings bright as glass."
-    },
-    {
-      "type": "rock",
-      "x": 59,
-      "y": 20
-    },
-    {
-      "type": "rock",
-      "x": 60,
-      "y": 22
-    },
-    {
-      "type": "rock",
-      "x": 58,
-      "y": 26
-    },
-    {
-      "type": "rock",
-      "x": 62,
-      "y": 30
-    },
-    {
-      "type": "rock",
-      "x": 57,
-      "y": 34
-    },
-    {
-      "type": "rock",
-      "x": 61,
-      "y": 36
-    },
-    {
-      "type": "pine",
-      "x": 63,
-      "y": 10
-    },
-    {
-      "type": "pine",
-      "x": 62,
-      "y": 18
-    },
-    {
-      "type": "pine",
-      "x": 63,
-      "y": 28
-    },
-    {
-      "type": "pine",
-      "x": 62,
-      "y": 36
-    },
-    {
-      "type": "gull",
-      "x": 60,
-      "y": 10,
-      "message": "A gull wheels over the stony east hills, riding the updraft."
-    },
-    {
-      "type": "store",
-      "x": 9,
-      "y": 19,
-      "width": 4,
-      "height": 4,
-      "message": "Flour, seeds, and a jar of pickled plums; the little store smells of cedar and cinnamon."
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 20
-    },
-    {
-      "type": "oak",
-      "x": 55,
-      "y": 21
-    },
-    {
-      "type": "oak",
-      "x": 55,
-      "y": 23
-    },
-    {
-      "type": "oak",
-      "x": 55,
-      "y": 25
-    },
-    {
-      "type": "pine",
-      "x": 52,
-      "y": 26
-    },
-    {
-      "type": "oak",
-      "x": 55,
-      "y": 27
-    },
-    {
-      "type": "pine",
-      "x": 52,
-      "y": 28
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 28
-    },
-    {
-      "type": "oak",
-      "x": 53,
-      "y": 29
-    },
-    {
-      "type": "oak",
-      "x": 55,
-      "y": 29
-    },
-    {
-      "type": "pine",
-      "x": 52,
-      "y": 30
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 30
-    },
-    {
-      "type": "pine",
-      "x": 62,
-      "y": 13
-    },
-    {
-      "type": "oak",
-      "x": 57,
-      "y": 14
-    },
-    {
-      "type": "pine",
-      "x": 57,
-      "y": 15
-    },
-    {
-      "type": "pine",
-      "x": 58,
-      "y": 15
-    },
-    {
-      "type": "oak",
-      "x": 57,
-      "y": 17
-    },
-    {
-      "type": "pine",
-      "x": 56,
-      "y": 17
-    },
-    {
-      "type": "pine",
-      "x": 58,
-      "y": 17
-    },
-    {
-      "type": "oak",
-      "x": 57,
-      "y": 18
-    },
-    {
-      "type": "pine",
-      "x": 56,
-      "y": 19
-    },
-    {
-      "type": "pine",
-      "x": 58,
-      "y": 19
-    },
-    {
-      "type": "oak",
-      "x": 57,
-      "y": 20
-    },
-    {
-      "type": "willow",
-      "x": 52,
-      "y": 23
-    },
-    {
-      "type": "willow",
-      "x": 55,
-      "y": 24
-    },
-    {
-      "type": "oak",
-      "x": 23,
-      "y": 8
-    },
-    {
-      "type": "bush",
-      "x": 18,
-      "y": 8
-    },
-    {
-      "type": "bush",
-      "x": 21,
-      "y": 8
-    },
-    {
-      "type": "bush",
-      "x": 23,
-      "y": 9
-    },
-    {
-      "type": "bush",
-      "x": 23,
-      "y": 10
-    },
-    {
-      "type": "cow",
-      "x": 9,
-      "y": 25,
-      "message": "A cow flicks her ear and goes back to chewing."
-    },
-    {
-      "type": "cow",
-      "x": 11,
-      "y": 27
-    },
-    {
-      "type": "bull",
-      "x": 9,
-      "y": 28,
-      "message": "The bull watches you sideways, unimpressed."
-    },
-    {
-      "type": "horse",
-      "x": 8,
-      "y": 25
-    },
-    {
-      "type": "horse",
-      "x": 11,
-      "y": 24
-    },
-    {
-      "type": "goat",
-      "x": 10,
-      "y": 29
-    },
-    {
-      "type": "goat",
-      "x": 8,
-      "y": 28
-    },
-    {
-      "type": "trough",
-      "x": 10,
-      "y": 26
-    },
-    {
-      "type": "haybale",
-      "x": 8,
-      "y": 24
-    },
-    {
-      "type": "haybale",
-      "x": 8,
-      "y": 30
-    },
-    {
-      "type": "waterWheel",
-      "x": 43,
-      "y": 24,
-      "width": 1,
-      "height": 1,
-      "message": "The old wheel turns slow and easy, grinding whatever needs grinding."
-    },
-    {
-      "type": "well",
-      "x": 14,
-      "y": 21,
-      "message": "Cool water, drawn straight from the river veins under the grass."
-    },
-    {
-      "type": "pig",
-      "x": 10,
-      "y": 27,
-      "message": "A pig roots at the ground, entirely happy about mud."
-    },
-    {
-      "type": "pig",
-      "x": 11,
-      "y": 29,
-      "message": "A pig trots a few steps, snout twitching at the grass."
-    },
-    {
-      "type": "bush",
-      "x": 53,
-      "y": 5
-    },
-    {
-      "type": "bush",
-      "x": 56,
-      "y": 2
-    },
-    {
-      "type": "bush",
-      "x": 60,
-      "y": 4
-    },
-    {
-      "type": "bush",
-      "x": 62,
-      "y": 7
-    },
-    {
-      "type": "bush",
-      "x": 59,
-      "y": 12
-    },
-    {
-      "type": "bush",
-      "x": 59,
-      "y": 10
-    },
-    {
-      "type": "rock",
-      "x": 52,
-      "y": 3
-    },
-    {
-      "type": "rock",
-      "x": 57,
-      "y": 1
-    },
-    {
-      "type": "rock",
-      "x": 61,
-      "y": 2
-    },
-    {
-      "type": "rock",
-      "x": 63,
-      "y": 6
-    },
-    {
-      "type": "rock",
-      "x": 53,
-      "y": 10
-    },
-    {
-      "type": "rock",
-      "x": 60,
-      "y": 12
-    },
-    {
-      "type": "pine",
-      "x": 52,
-      "y": 0
-    },
-    {
-      "type": "oak",
-      "x": 54,
-      "y": 0
-    },
-    {
-      "type": "willow",
-      "x": 56,
-      "y": 0
-    },
-    {
-      "type": "pine",
-      "x": 58,
-      "y": 0
-    },
-    {
-      "type": "oak",
-      "x": 60,
-      "y": 0
-    },
-    {
-      "type": "willow",
-      "x": 62,
-      "y": 0
-    },
-    {
-      "type": "pine",
-      "x": 53,
-      "y": 1
-    },
-    {
-      "type": "oak",
-      "x": 55,
-      "y": 1
-    },
-    {
-      "type": "willow",
-      "x": 59,
-      "y": 1
-    },
-    {
-      "type": "pine",
-      "x": 61,
-      "y": 1
-    },
-    {
-      "type": "oak",
-      "x": 63,
-      "y": 1
-    },
-    {
-      "type": "willow",
-      "x": 52,
-      "y": 2
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 2
-    },
-    {
-      "type": "oak",
-      "x": 58,
-      "y": 2
-    },
-    {
-      "type": "willow",
-      "x": 60,
-      "y": 2
-    },
-    {
-      "type": "pine",
-      "x": 62,
-      "y": 2
-    },
-    {
-      "type": "oak",
-      "x": 53,
-      "y": 3
-    },
-    {
-      "type": "willow",
-      "x": 55,
-      "y": 3
-    },
-    {
-      "type": "pine",
-      "x": 57,
-      "y": 3
-    },
-    {
-      "type": "oak",
-      "x": 59,
-      "y": 3
-    },
-    {
-      "type": "willow",
-      "x": 61,
-      "y": 3
-    },
-    {
-      "type": "pine",
-      "x": 63,
-      "y": 3
-    },
-    {
-      "type": "oak",
-      "x": 52,
-      "y": 4
-    },
-    {
-      "type": "willow",
-      "x": 54,
-      "y": 4
-    },
-    {
-      "type": "pine",
-      "x": 56,
-      "y": 4
-    },
-    {
-      "type": "oak",
-      "x": 58,
-      "y": 4
-    },
-    {
-      "type": "willow",
-      "x": 62,
-      "y": 4
-    },
-    {
-      "type": "pine",
-      "x": 55,
-      "y": 5
-    },
-    {
-      "type": "oak",
-      "x": 57,
-      "y": 5
-    },
-    {
-      "type": "willow",
-      "x": 59,
-      "y": 5
-    },
-    {
-      "type": "pine",
-      "x": 61,
-      "y": 5
-    },
-    {
-      "type": "oak",
-      "x": 63,
-      "y": 5
-    },
-    {
-      "type": "willow",
-      "x": 52,
-      "y": 6
-    },
-    {
-      "type": "pine",
-      "x": 54,
-      "y": 6
-    },
-    {
-      "type": "oak",
-      "x": 56,
-      "y": 6
-    },
-    {
-      "type": "willow",
-      "x": 62,
-      "y": 6
-    },
-    {
-      "type": "pine",
-      "x": 53,
-      "y": 7
-    },
-    {
-      "type": "oak",
-      "x": 55,
-      "y": 7
-    },
-    {
-      "type": "willow",
-      "x": 57,
-      "y": 7
-    },
-    {
-      "type": "pine",
-      "x": 61,
-      "y": 7
-    },
-    {
-      "type": "oak",
-      "x": 63,
-      "y": 7
-    },
-    {
-      "type": "willow",
-      "x": 52,
-      "y": 8
-    },
-    {
-      "type": "pine",
-      "x": 62,
-      "y": 8
-    },
-    {
-      "type": "oak",
-      "x": 53,
-      "y": 9
-    },
-    {
-      "type": "willow",
-      "x": 57,
-      "y": 9
-    },
-    {
-      "type": "pine",
-      "x": 59,
-      "y": 9
-    },
-    {
-      "type": "willow",
-      "x": 61,
-      "y": 9
-    },
-    {
-      "type": "pine",
-      "x": 63,
-      "y": 9
-    },
-    {
-      "type": "pine",
-      "x": 52,
-      "y": 10
-    },
-    {
-      "type": "pine",
-      "x": 56,
-      "y": 10
-    },
-    {
-      "type": "pine",
-      "x": 58,
-      "y": 10
-    },
-    {
-      "type": "pine",
-      "x": 52,
-      "y": 31
-    },
-    {
-      "type": "oak",
-      "x": 59,
-      "y": 14
-    },
-    {
-      "type": "willow",
-      "x": 60,
-      "y": 14
-    },
-    {
-      "type": "pine",
-      "x": 62,
-      "y": 14
-    },
-    {
-      "type": "oak",
-      "x": 63,
-      "y": 14
-    },
-    {
-      "type": "willow",
-      "x": 59,
-      "y": 15
-    },
-    {
-      "type": "pine",
-      "x": 63,
-      "y": 15
-    },
-    {
-      "type": "oak",
-      "x": 62,
-      "y": 16
-    },
-    {
-      "type": "willow",
-      "x": 63,
-      "y": 16
-    },
-    {
-      "type": "pine",
-      "x": 59,
-      "y": 17
-    },
-    {
-      "type": "rock",
-      "x": 0,
-      "y": 19,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 1,
-      "y": 20,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 5,
-      "y": 20,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 1,
-      "y": 23,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 3,
-      "y": 23,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 5,
-      "y": 23,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 1,
-      "y": 26,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 3,
-      "y": 26,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 5,
-      "y": 26,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 1,
-      "y": 29,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 3,
-      "y": 29,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 5,
-      "y": 29,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 1,
-      "y": 32,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 3,
-      "y": 32,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 5,
-      "y": 32,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 52,
-      "y": 17,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 53,
-      "y": 18,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 56,
-      "y": 21,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 58,
-      "y": 21,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 56,
-      "y": 22,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 58,
-      "y": 22,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 56,
-      "y": 23,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 58,
-      "y": 23,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 56,
-      "y": 24,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 56,
-      "y": 25,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 56,
-      "y": 26,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 56,
-      "y": 27,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 56,
-      "y": 28,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 56,
-      "y": 29,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 56,
-      "y": 30,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 56,
-      "y": 31,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "bench",
+      "type": "sign",
       "x": 41,
-      "y": 26,
-      "width": 1,
-      "height": 1,
-      "message": "A bench by the fire, warm from the stones and just right for watching the river."
+      "y": 17,
+      "message": "The square lies at the heart of the village: the pond north, Sunroot Farm south, the orchard east, and the old forest west."
+    },
+    {
+      "type": "mailbox",
+      "x": 41,
+      "y": 15,
+      "message": "The little mailbox leans by the lane, its flag still up from yesterday\u2019s letter."
+    },
+    {
+      "type": "campfire",
+      "x": 25,
+      "y": 32,
+      "message": "The campfire crackles. Two acorn cups sit waiting by the flames."
     },
     {
       "type": "bench",
-      "x": 39,
-      "y": 24,
-      "width": 1,
-      "height": 1,
+      "x": 26,
+      "y": 32,
       "message": "Someone left a bench here, just the right warmth for a lazy afternoon."
     },
     {
       "type": "picnicBlanket",
-      "x": 30,
-      "y": 22,
-      "width": 1,
-      "height": 1,
+      "x": 28,
+      "y": 33,
       "message": "A checked blanket is spread on the grass, with a basket and two cups waiting."
     },
     {
-      "type": "mailbox",
-      "x": 8,
-      "y": 15,
-      "width": 1,
-      "height": 1,
-      "message": "The little mailbox leans by the lane, its flag still up from yesterday\u2019s letter."
-    },
-    {
       "type": "beeSkep",
-      "x": 6,
-      "y": 15,
-      "width": 1,
-      "height": 1,
+      "x": 54,
+      "y": 20,
       "message": "Bees hum around the straw skep, busy with the orchard\u2019s first blossoms."
     },
     {
-      "type": "oak",
-      "x": 53,
-      "y": 0,
-      "width": 1,
-      "height": 1
+      "type": "crop",
+      "x": 41,
+      "y": 27,
+      "message": "Green sprouts push through the tilled soil in neat little rows."
     },
     {
-      "type": "willow",
-      "x": 59,
-      "y": 0,
-      "width": 1,
-      "height": 1
+      "type": "crop",
+      "x": 42,
+      "y": 28,
+      "message": "Golden wheat nods in the breeze, nearly ready for the sickle."
     },
     {
-      "type": "willow",
-      "x": 52,
-      "y": 1,
-      "width": 1,
-      "height": 1
+      "type": "crop",
+      "x": 41,
+      "y": 31,
+      "message": "Young barley stands in tidy green lines."
     },
     {
-      "type": "oak",
-      "x": 60,
-      "y": 1,
-      "width": 1,
-      "height": 1
+      "type": "crop",
+      "x": 42,
+      "y": 32,
+      "message": "The wet rows shine; the crop is coming in strong."
     },
     {
-      "type": "oak",
-      "x": 53,
-      "y": 2,
-      "width": 1,
-      "height": 1
+      "type": "crop",
+      "x": 47,
+      "y": 31,
+      "message": "Bean vines climb their poles in the center strip."
     },
     {
-      "type": "willow",
-      "x": 63,
-      "y": 2,
-      "width": 1,
-      "height": 1
+      "type": "crop",
+      "x": 48,
+      "y": 32,
+      "message": "The last row drinks deep and turns its leaves to the sun."
     },
     {
-      "type": "willow",
-      "x": 54,
-      "y": 3,
-      "width": 1,
-      "height": 1
+      "type": "driftwood",
+      "x": 16,
+      "y": 36,
+      "message": "Driftwood, bleached pale and warm under the sun."
     },
     {
-      "type": "oak",
-      "x": 62,
-      "y": 3,
-      "width": 1,
-      "height": 1
+      "type": "koi",
+      "x": 8,
+      "y": 39,
+      "message": "A koi loops lazily beneath the surface."
     },
     {
-      "type": "oak",
-      "x": 53,
-      "y": 4,
-      "width": 1,
-      "height": 1
+      "type": "bass",
+      "x": 20,
+      "y": 40,
+      "message": "A bass hangs in the green sea light, unhurried."
     },
     {
-      "type": "willow",
-      "x": 61,
-      "y": 4,
-      "width": 1,
-      "height": 1
+      "type": "minnow",
+      "x": 33,
+      "y": 38,
+      "message": "Minnows dart in a silver ribbon through the shallows."
     },
     {
-      "type": "willow",
-      "x": 52,
-      "y": 5,
-      "width": 1,
-      "height": 1
+      "type": "bass",
+      "x": 45,
+      "y": 41,
+      "message": "A bass cruises the shallows where the river meets the sea."
     },
     {
-      "type": "oak",
-      "x": 60,
-      "y": 5,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 53,
-      "y": 6,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 57,
-      "y": 6,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
-      "x": 61,
-      "y": 6,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 52,
-      "y": 7,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "oak",
+      "type": "koi",
       "x": 56,
-      "y": 7,
-      "width": 1,
-      "height": 1
+      "y": 39,
+      "message": "A koi turns a slow circle in the deep water."
     },
     {
-      "type": "oak",
-      "x": 53,
-      "y": 8,
-      "width": 1,
-      "height": 1
+      "type": "lily",
+      "x": 30,
+      "y": 20,
+      "message": "A lily pad bobs, and a koi loops lazily beneath it."
     },
     {
-      "type": "willow",
-      "x": 55,
-      "y": 8,
-      "width": 1,
-      "height": 1
+      "type": "lily",
+      "x": 32,
+      "y": 22,
+      "message": "A lily opens white against the dark pond water."
     },
     {
-      "type": "oak",
-      "x": 63,
-      "y": 8,
-      "width": 1,
-      "height": 1
+      "type": "lily",
+      "x": 34,
+      "y": 21,
+      "message": "A lily pad drifts, nudged by some small hidden life."
     },
     {
-      "type": "willow",
+      "type": "gull",
+      "x": 22,
+      "y": 35,
+      "message": "A gull rides the wind off the water."
+    },
+    {
+      "type": "gull",
+      "x": 30,
+      "y": 36,
+      "message": "A gull struts the sand, daring the tide."
+    },
+    {
+      "type": "gull",
       "x": 52,
-      "y": 9,
-      "width": 1,
-      "height": 1
+      "y": 35,
+      "message": "A gull wheels over the shore, riding the updraft."
     },
     {
-      "type": "oak",
-      "x": 62,
-      "y": 9,
-      "width": 1,
-      "height": 1
+      "type": "butterfly",
+      "x": 20,
+      "y": 29,
+      "message": "A butterfly drifts between the meadow flowers."
     },
     {
-      "type": "oak",
-      "x": 57,
-      "y": 10,
-      "width": 1,
-      "height": 1
+      "type": "butterfly",
+      "x": 26,
+      "y": 30,
+      "message": "A blue butterfly settles, then thinks better of it."
     },
     {
-      "type": "willow",
-      "x": 62,
-      "y": 10,
-      "width": 1,
-      "height": 1
+      "type": "butterfly",
+      "x": 31,
+      "y": 32,
+      "message": "A butterfly stitches the warm air, wings bright as glass."
     },
     {
-      "type": "oak",
-      "x": 57,
-      "y": 11,
-      "width": 1,
-      "height": 1
+      "type": "butterfly",
+      "x": 22,
+      "y": 34,
+      "message": "A small butterfly rides a seed head down the meadow."
     },
     {
-      "type": "willow",
-      "x": 59,
-      "y": 11,
-      "width": 1,
-      "height": 1
+      "type": "butterfly",
+      "x": 33,
+      "y": 29,
+      "message": "A butterfly loops over the river bank."
     },
     {
-      "type": "oak",
-      "x": 62,
-      "y": 11,
-      "width": 1,
-      "height": 1
+      "type": "dragonfly",
+      "x": 24,
+      "y": 28,
+      "message": "A dragonfly skims low over the meadow grass, wings rattling."
     },
     {
-      "type": "willow",
-      "x": 63,
-      "y": 11,
-      "width": 1,
-      "height": 1
+      "type": "dragonfly",
+      "x": 29,
+      "y": 31,
+      "message": "A dragonfly hangs above the river, bright as a needle."
     },
     {
-      "type": "oak",
-      "x": 62,
-      "y": 12,
-      "width": 1,
-      "height": 1
+      "type": "dragonfly",
+      "x": 32,
+      "y": 34,
+      "message": "A dragonfly stitches the orchard air, wings bright as glass."
     },
     {
-      "type": "willow",
-      "x": 63,
-      "y": 12,
-      "width": 1,
-      "height": 1
+      "type": "sparrow",
+      "x": 13,
+      "y": 18,
+      "message": "A sparrow hops through the grass, cocking its head at you."
     },
     {
-      "type": "willow",
-      "x": 59,
-      "y": 13,
-      "width": 1,
-      "height": 1
+      "type": "sparrow",
+      "x": 48,
+      "y": 21,
+      "message": "A sparrow flits between the orchard rows, chirring at the thin air."
     },
     {
-      "type": "oak",
-      "x": 60,
-      "y": 13,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "willow",
-      "x": 63,
-      "y": 13,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "bush",
-      "x": 55,
-      "y": 0,
-      "width": 1,
-      "height": 1
-    },
-    {
-      "type": "bush",
+      "type": "robin",
       "x": 56,
-      "y": 1,
-      "width": 1,
-      "height": 1
+      "y": 24,
+      "message": "A robin hunts worms in the soft orchard grass."
+    },
+    {
+      "type": "robin",
+      "x": 10,
+      "y": 22,
+      "message": "A robin watches the forest path from a warm stone."
+    },
+    {
+      "type": "rock",
+      "x": 48,
+      "y": 5
+    },
+    {
+      "type": "rock",
+      "x": 50,
+      "y": 7
+    },
+    {
+      "type": "rock",
+      "x": 51,
+      "y": 8
+    },
+    {
+      "type": "rock",
+      "x": 58,
+      "y": 4
+    },
+    {
+      "type": "rock",
+      "x": 59,
+      "y": 9
     },
     {
       "type": "bush",
       "x": 58,
-      "y": 3,
-      "width": 1,
-      "height": 1
+      "y": 8
     },
     {
       "type": "bush",
-      "x": 55,
-      "y": 4,
-      "width": 1,
-      "height": 1
+      "x": 59,
+      "y": 12
     },
     {
       "type": "bush",
+      "x": 59,
+      "y": 7
+    },
+    {
+      "type": "bush",
+      "x": 50,
+      "y": 12
+    },
+    {
+      "type": "bush",
+      "x": 27,
+      "y": 29
+    },
+    {
+      "type": "bush",
+      "x": 32,
+      "y": 31
+    },
+    {
+      "type": "bush",
+      "x": 33,
+      "y": 35
+    },
+    {
+      "type": "rock",
+      "x": 23,
+      "y": 33
+    },
+    {
+      "type": "rock",
+      "x": 31,
+      "y": 35
+    },
+    {
+      "type": "bush",
+      "x": 46,
+      "y": 15
+    },
+    {
+      "type": "oak",
+      "x": 48,
+      "y": 3
+    },
+    {
+      "type": "willow",
       "x": 54,
-      "y": 5,
-      "width": 1,
-      "height": 1
+      "y": 11
+    },
+    {
+      "type": "willow",
+      "x": 53,
+      "y": 7
+    },
+    {
+      "type": "willow",
+      "x": 34,
+      "y": 34
+    },
+    {
+      "type": "pine",
+      "x": 20,
+      "y": 4
+    },
+    {
+      "type": "oak",
+      "x": 30,
+      "y": 6
+    },
+    {
+      "type": "pine",
+      "x": 38,
+      "y": 3
+    },
+    {
+      "type": "willow",
+      "x": 44,
+      "y": 8
+    },
+    {
+      "type": "willow",
+      "x": 2,
+      "y": 30
+    },
+    {
+      "type": "pine",
+      "x": 4,
+      "y": 30
+    },
+    {
+      "type": "pine",
+      "x": 0,
+      "y": 19
+    },
+    {
+      "type": "pine",
+      "x": 11,
+      "y": 23
+    },
+    {
+      "type": "oak",
+      "x": 14,
+      "y": 20
+    },
+    {
+      "type": "pine",
+      "x": 4,
+      "y": 31
+    },
+    {
+      "type": "oak",
+      "x": 2,
+      "y": 29
+    },
+    {
+      "type": "willow",
+      "x": 5,
+      "y": 16
+    },
+    {
+      "type": "pine",
+      "x": 13,
+      "y": 20
+    },
+    {
+      "type": "pine",
+      "x": 10,
+      "y": 33
+    },
+    {
+      "type": "pine",
+      "x": 10,
+      "y": 20
+    },
+    {
+      "type": "pine",
+      "x": 14,
+      "y": 16
+    },
+    {
+      "type": "oak",
+      "x": 1,
+      "y": 17
+    },
+    {
+      "type": "willow",
+      "x": 1,
+      "y": 24
+    },
+    {
+      "type": "pine",
+      "x": 1,
+      "y": 16
+    },
+    {
+      "type": "pine",
+      "x": 7,
+      "y": 18
+    },
+    {
+      "type": "pine",
+      "x": 2,
+      "y": 20
+    },
+    {
+      "type": "oak",
+      "x": 5,
+      "y": 30
+    },
+    {
+      "type": "oak",
+      "x": 11,
+      "y": 22
+    },
+    {
+      "type": "oak",
+      "x": 7,
+      "y": 23
+    },
+    {
+      "type": "pine",
+      "x": 4,
+      "y": 17
+    },
+    {
+      "type": "pine",
+      "x": 4,
+      "y": 28
+    },
+    {
+      "type": "willow",
+      "x": 0,
+      "y": 33
+    },
+    {
+      "type": "oak",
+      "x": 10,
+      "y": 25
+    },
+    {
+      "type": "willow",
+      "x": 1,
+      "y": 22
+    },
+    {
+      "type": "willow",
+      "x": 6,
+      "y": 21
+    },
+    {
+      "type": "pine",
+      "x": 8,
+      "y": 30
+    },
+    {
+      "type": "pine",
+      "x": 0,
+      "y": 23
+    },
+    {
+      "type": "pine",
+      "x": 8,
+      "y": 23
+    },
+    {
+      "type": "pine",
+      "x": 5,
+      "y": 29
+    },
+    {
+      "type": "oak",
+      "x": 5,
+      "y": 21
+    },
+    {
+      "type": "willow",
+      "x": 10,
+      "y": 16
+    },
+    {
+      "type": "pine",
+      "x": 10,
+      "y": 30
+    },
+    {
+      "type": "willow",
+      "x": 3,
+      "y": 32
+    },
+    {
+      "type": "willow",
+      "x": 3,
+      "y": 34
+    },
+    {
+      "type": "willow",
+      "x": 8,
+      "y": 17
+    },
+    {
+      "type": "oak",
+      "x": 5,
+      "y": 22
+    },
+    {
+      "type": "pine",
+      "x": 5,
+      "y": 34
+    },
+    {
+      "type": "pine",
+      "x": 6,
+      "y": 33
+    },
+    {
+      "type": "pine",
+      "x": 6,
+      "y": 31
+    },
+    {
+      "type": "pine",
+      "x": 9,
+      "y": 32
+    },
+    {
+      "type": "pine",
+      "x": 5,
+      "y": 19
+    },
+    {
+      "type": "pine",
+      "x": 9,
+      "y": 31
+    },
+    {
+      "type": "pine",
+      "x": 7,
+      "y": 17
+    },
+    {
+      "type": "willow",
+      "x": 11,
+      "y": 30
+    },
+    {
+      "type": "oak",
+      "x": 6,
+      "y": 22
+    },
+    {
+      "type": "willow",
+      "x": 3,
+      "y": 18
+    },
+    {
+      "type": "willow",
+      "x": 10,
+      "y": 21
+    },
+    {
+      "type": "oak",
+      "x": 3,
+      "y": 19
+    },
+    {
+      "type": "oak",
+      "x": 12,
+      "y": 31
+    },
+    {
+      "type": "pine",
+      "x": 13,
+      "y": 16
+    },
+    {
+      "type": "oak",
+      "x": 3,
+      "y": 20
+    },
+    {
+      "type": "willow",
+      "x": 4,
+      "y": 29
+    },
+    {
+      "type": "pine",
+      "x": 2,
+      "y": 21
+    },
+    {
+      "type": "oak",
+      "x": 0,
+      "y": 25
+    },
+    {
+      "type": "oak",
+      "x": 0,
+      "y": 16
+    },
+    {
+      "type": "willow",
+      "x": 3,
+      "y": 17
+    },
+    {
+      "type": "pine",
+      "x": 2,
+      "y": 31
+    },
+    {
+      "type": "willow",
+      "x": 3,
+      "y": 30
+    },
+    {
+      "type": "pine",
+      "x": 12,
+      "y": 16
+    },
+    {
+      "type": "willow",
+      "x": 9,
+      "y": 30
+    },
+    {
+      "type": "oak",
+      "x": 4,
+      "y": 20
+    },
+    {
+      "type": "oak",
+      "x": 6,
+      "y": 32
+    },
+    {
+      "type": "willow",
+      "x": 5,
+      "y": 20
+    },
+    {
+      "type": "pine",
+      "x": 6,
+      "y": 16
+    },
+    {
+      "type": "oak",
+      "x": 8,
+      "y": 18
+    },
+    {
+      "type": "willow",
+      "x": 7,
+      "y": 32
+    },
+    {
+      "type": "pine",
+      "x": 3,
+      "y": 16
+    },
+    {
+      "type": "pine",
+      "x": 2,
+      "y": 17
+    },
+    {
+      "type": "pine",
+      "x": 5,
+      "y": 33
+    },
+    {
+      "type": "willow",
+      "x": 14,
+      "y": 23
+    },
+    {
+      "type": "pine",
+      "x": 4,
+      "y": 32
+    },
+    {
+      "type": "pine",
+      "x": 4,
+      "y": 26
+    },
+    {
+      "type": "oak",
+      "x": 6,
+      "y": 19
+    },
+    {
+      "type": "oak",
+      "x": 0,
+      "y": 18
+    },
+    {
+      "type": "pine",
+      "x": 3,
+      "y": 26
+    },
+    {
+      "type": "pine",
+      "x": 9,
+      "y": 20
+    },
+    {
+      "type": "oak",
+      "x": 8,
+      "y": 20
+    },
+    {
+      "type": "pine",
+      "x": 11,
+      "y": 17
+    },
+    {
+      "type": "pine",
+      "x": 11,
+      "y": 33
+    },
+    {
+      "type": "oak",
+      "x": 3,
+      "y": 22
+    },
+    {
+      "type": "willow",
+      "x": 12,
+      "y": 18
+    },
+    {
+      "type": "oak",
+      "x": 1,
+      "y": 30
+    },
+    {
+      "type": "oak",
+      "x": 1,
+      "y": 26
+    },
+    {
+      "type": "willow",
+      "x": 2,
+      "y": 16
     },
     {
       "type": "bush",
-      "x": 55,
-      "y": 6,
-      "width": 1,
-      "height": 1
+      "x": 2,
+      "y": 25
     },
     {
       "type": "bush",
-      "x": 54,
-      "y": 7,
-      "width": 1,
-      "height": 1
+      "x": 4,
+      "y": 34
     },
     {
       "type": "bush",
-      "x": 61,
-      "y": 8,
-      "width": 1,
-      "height": 1
+      "x": 14,
+      "y": 29
     },
     {
       "type": "bush",
+      "x": 11,
+      "y": 24
+    },
+    {
+      "type": "bush",
+      "x": 0,
+      "y": 27
+    },
+    {
+      "type": "bush",
+      "x": 8,
+      "y": 16
+    },
+    {
+      "type": "bush",
+      "x": 12,
+      "y": 33
+    },
+    {
+      "type": "bush",
+      "x": 10,
+      "y": 18
+    },
+    {
+      "type": "bush",
+      "x": 1,
+      "y": 20
+    },
+    {
+      "type": "bush",
+      "x": 11,
+      "y": 31
+    },
+    {
+      "type": "bush",
+      "x": 7,
+      "y": 16
+    },
+    {
+      "type": "bush",
+      "x": 11,
+      "y": 25
+    },
+    {
+      "type": "bush",
+      "x": 0,
+      "y": 22
+    },
+    {
+      "type": "bush",
+      "x": 7,
+      "y": 19
+    },
+    {
+      "type": "bush",
+      "x": 12,
+      "y": 21
+    },
+    {
+      "type": "bush",
+      "x": 10,
+      "y": 23
+    },
+    {
+      "type": "bush",
+      "x": 0,
+      "y": 30
+    },
+    {
+      "type": "bush",
+      "x": 2,
+      "y": 27
+    },
+    {
+      "type": "bush",
+      "x": 3,
+      "y": 21
+    },
+    {
+      "type": "bush",
+      "x": 8,
+      "y": 21
+    },
+    {
+      "type": "bush",
+      "x": 14,
+      "y": 18
+    },
+    {
+      "type": "bush",
+      "x": 14,
+      "y": 21
+    },
+    {
+      "type": "bush",
+      "x": 12,
+      "y": 23
+    },
+    {
+      "type": "bush",
+      "x": 14,
+      "y": 19
+    },
+    {
+      "type": "rock",
+      "x": 0,
+      "y": 21
+    },
+    {
+      "type": "rock",
+      "x": 10,
+      "y": 34
+    },
+    {
+      "type": "house",
+      "x": 34,
+      "y": 12,
+      "width": 4,
+      "height": 4,
+      "message": "The village house keeps its shutters open; somebody is always baking something inside."
+    },
+    {
+      "type": "hut",
+      "x": 48,
+      "y": 13,
+      "width": 2,
+      "height": 3,
+      "message": "A little log hut leans against the cliff, its woodpile always neatly stacked."
+    },
+    {
+      "type": "driftwood",
+      "x": 11,
+      "y": 36,
+      "message": "A silvered driftwood log, worn smooth by the tide."
+    },
+    {
+      "type": "rowboat",
+      "x": 13,
+      "y": 36,
+      "message": "A little rowboat waits on the sand, oars tucked in neat."
+    },
+    {
+      "type": "crate",
+      "x": 15,
+      "y": 36,
+      "message": "A crate of apples and rope sits ready for the next boat."
+    },
+    {
+      "type": "driftwood",
+      "x": 2,
+      "y": 36,
+      "message": "A driftwood log makes a sun-warm seat, facing the water."
+    },
+    {
+      "type": "gull",
+      "x": 6,
+      "y": 35,
+      "message": "A gull struts the sand, daring the tide."
+    },
+    {
+      "type": "gull",
+      "x": 9,
+      "y": 36,
+      "message": "A gull rides the wind off the water."
+    },
+    {
+      "type": "gull",
+      "x": 5,
+      "y": 40,
+      "message": "A gull wheels over the shore, riding the updraft."
+    },
+    {
+      "type": "gull",
+      "x": 40,
+      "y": 39,
+      "message": "A gull glides low over the sea, wings held wide."
+    },
+    {
+      "type": "gull",
       "x": 58,
-      "y": 9,
-      "width": 1,
-      "height": 1
+      "y": 42,
+      "message": "A gull rides the sea wind, unhurried."
+    },
+    {
+      "type": "bass",
+      "x": 4,
+      "y": 41,
+      "message": "A bass hangs in the green sea light, unhurried."
+    },
+    {
+      "type": "bass",
+      "x": 40,
+      "y": 41,
+      "message": "A bass cruises the shallows where the river meets the sea."
+    },
+    {
+      "type": "minnow",
+      "x": 50,
+      "y": 42,
+      "message": "Minnows dart in a silver ribbon through the shallows."
+    },
+    {
+      "type": "crop",
+      "x": 42,
+      "y": 27,
+      "message": "The north field's second row fills in, every sprout shoulder to shoulder."
+    },
+    {
+      "type": "crop",
+      "x": 48,
+      "y": 31,
+      "message": "The center strip's rows close up tidy, beans climbing steady and true."
+    },
+    {
+      "type": "chicken",
+      "x": 47,
+      "y": 25,
+      "message": "A plump hen patrols the barn's north wall, certain she is in charge."
+    },
+    {
+      "type": "chicken",
+      "x": 49,
+      "y": 25,
+      "message": "A young hen scratches by the barn, scattering seed husks with great importance."
+    },
+    {
+      "type": "haybale",
+      "x": 51,
+      "y": 28,
+      "message": "A hay bale rests against the barn's east wall, sweet with clover and warm from the sun."
+    },
+    {
+      "type": "oak",
+      "x": 1,
+      "y": 18
+    },
+    {
+      "type": "oak",
+      "x": 4,
+      "y": 18
+    },
+    {
+      "type": "willow",
+      "x": 4,
+      "y": 19
+    },
+    {
+      "type": "oak",
+      "x": 8,
+      "y": 19
+    },
+    {
+      "type": "willow",
+      "x": 11,
+      "y": 20
+    },
+    {
+      "type": "oak",
+      "x": 9,
+      "y": 22
+    },
+    {
+      "type": "willow",
+      "x": 6,
+      "y": 17
+    },
+    {
+      "type": "oak",
+      "x": 3,
+      "y": 27
+    },
+    {
+      "type": "oak",
+      "x": 4,
+      "y": 27
+    },
+    {
+      "type": "willow",
+      "x": 1,
+      "y": 28
+    },
+    {
+      "type": "oak",
+      "x": 7,
+      "y": 29
+    },
+    {
+      "type": "willow",
+      "x": 5,
+      "y": 31
+    },
+    {
+      "type": "oak",
+      "x": 8,
+      "y": 32
+    },
+    {
+      "type": "oak",
+      "x": 12,
+      "y": 32
+    },
+    {
+      "type": "willow",
+      "x": 2,
+      "y": 33
     },
     {
       "type": "bush",
-      "x": 60,
-      "y": 11,
-      "width": 1,
-      "height": 1
+      "x": 1,
+      "y": 19
+    },
+    {
+      "type": "bush",
+      "x": 3,
+      "y": 28
+    },
+    {
+      "type": "bush",
+      "x": 7,
+      "y": 30
+    },
+    {
+      "type": "bush",
+      "x": 9,
+      "y": 33
+    },
+    {
+      "type": "bush",
+      "x": 11,
+      "y": 32
+    },
+    {
+      "type": "bush",
+      "x": 6,
+      "y": 34
+    },
+    {
+      "type": "bush",
+      "x": 2,
+      "y": 32
+    },
+    {
+      "type": "bush",
+      "x": 5,
+      "y": 32
+    },
+    {
+      "type": "bush",
+      "x": 8,
+      "y": 22
+    },
+    {
+      "type": "bush",
+      "x": 10,
+      "y": 19
+    },
+    {
+      "type": "rock",
+      "x": 51,
+      "y": 1
+    },
+    {
+      "type": "rock",
+      "x": 53,
+      "y": 0
+    },
+    {
+      "type": "rock",
+      "x": 51,
+      "y": 13
+    },
+    {
+      "type": "rock",
+      "x": 54,
+      "y": 13
+    },
+    {
+      "type": "rock",
+      "x": 55,
+      "y": 10
+    },
+    {
+      "type": "rock",
+      "x": 58,
+      "y": 2
+    },
+    {
+      "type": "rock",
+      "x": 58,
+      "y": 11
+    },
+    {
+      "type": "rock",
+      "x": 45,
+      "y": 1
+    },
+    {
+      "type": "rock",
+      "x": 45,
+      "y": 12
+    },
+    {
+      "type": "bush",
+      "x": 53,
+      "y": 8
+    },
+    {
+      "type": "bush",
+      "x": 51,
+      "y": 10
+    },
+    {
+      "type": "bush",
+      "x": 54,
+      "y": 12
+    },
+    {
+      "type": "bush",
+      "x": 48,
+      "y": 6
+    },
+    {
+      "type": "bush",
+      "x": 45,
+      "y": 5
+    },
+    {
+      "type": "oak",
+      "x": 52,
+      "y": 8
+    },
+    {
+      "type": "willow",
+      "x": 51,
+      "y": 11
+    },
+    {
+      "type": "oak",
+      "x": 58,
+      "y": 6
+    },
+    {
+      "type": "willow",
+      "x": 59,
+      "y": 3
+    },
+    {
+      "type": "oak",
+      "x": 45,
+      "y": 10
+    },
+    {
+      "type": "koi",
+      "x": 10,
+      "y": 4,
+      "message": "A koi drifts through the green shallows, its orange scales bright as a lantern."
+    },
+    {
+      "type": "bass",
+      "x": 8,
+      "y": 6,
+      "message": "A bass rests beneath the reeds, then flicks its tail and slips away."
+    },
+    {
+      "type": "minnow",
+      "x": 16,
+      "y": 9,
+      "message": "A minnow darts between the stones, quick as a thought."
+    },
+    {
+      "type": "bass",
+      "x": 18,
+      "y": 10,
+      "message": "A bass holds steady in the current, fins barely moving."
+    },
+    {
+      "type": "koi",
+      "x": 20,
+      "y": 12,
+      "message": "A koi turns a slow circle in the stream, trailing a ribbon of light."
+    },
+    {
+      "type": "lily",
+      "x": 11,
+      "y": 5,
+      "message": "A lily pad floats here, its white bloom folded shut for the afternoon."
+    },
+    {
+      "type": "lily",
+      "x": 9,
+      "y": 3,
+      "message": "The lily opens a little wider each time the sun finds it."
+    },
+    {
+      "type": "rock",
+      "x": 17,
+      "y": 8,
+      "message": "A smooth bank stone, warm from the morning sun."
+    },
+    {
+      "type": "rock",
+      "x": 19,
+      "y": 10,
+      "message": "The stone is worn round by years of water and small feet."
+    },
+    {
+      "type": "rock",
+      "x": 22,
+      "y": 12,
+      "message": "Moss clings to the shaded side of this old bend stone."
+    },
+    {
+      "type": "willow",
+      "x": 9,
+      "y": 9,
+      "message": "The willow trails its fingers in the lake, and the water answers in slow rings."
+    },
+    {
+      "type": "willow",
+      "x": 11,
+      "y": 9,
+      "message": "A willow leans over the south shore, its green curtain stirring in the breeze."
+    },
+    {
+      "type": "bench",
+      "x": 22,
+      "y": 29,
+      "message": "A bench above the bend, facing the water. The bridge and its arch sit just downstream."
+    },
+    {
+      "type": "butterfly",
+      "x": 17,
+      "y": 30,
+      "message": "A butterfly tumbles through the west-bank flowers, drunk on the afternoon."
+    },
+    {
+      "type": "butterfly",
+      "x": 25,
+      "y": 34,
+      "message": "A butterfly rides the tall grass, wings opening and closing like a slow breath."
+    },
+    {
+      "type": "butterfly",
+      "x": 30,
+      "y": 28,
+      "message": "A butterfly rests on the riverbank flowers, wings bright as a scrap of sky."
+    },
+    {
+      "type": "dragonfly",
+      "x": 20,
+      "y": 30,
+      "message": "A dragonfly hovers over the flower drift, wings a blur of glass."
+    },
+    {
+      "type": "dragonfly",
+      "x": 18,
+      "y": 32,
+      "message": "A dragonfly skims the shallows, stitching silver lines across the water."
+    },
+    {
+      "type": "dragonfly",
+      "x": 29,
+      "y": 32,
+      "message": "A dragonfly patrols the open meadow, bright as a needle."
+    },
+    {
+      "type": "oak",
+      "x": 55,
+      "y": 16
+    },
+    {
+      "type": "willow",
+      "x": 55,
+      "y": 20
+    },
+    {
+      "type": "oak",
+      "x": 55,
+      "y": 24
+    },
+    {
+      "type": "willow",
+      "x": 55,
+      "y": 28
+    },
+    {
+      "type": "willow",
+      "x": 57,
+      "y": 16
+    },
+    {
+      "type": "oak",
+      "x": 57,
+      "y": 20
+    },
+    {
+      "type": "willow",
+      "x": 57,
+      "y": 24
+    },
+    {
+      "type": "oak",
+      "x": 57,
+      "y": 28
+    },
+    {
+      "type": "oak",
+      "x": 59,
+      "y": 16
+    },
+    {
+      "type": "willow",
+      "x": 59,
+      "y": 20
+    },
+    {
+      "type": "oak",
+      "x": 59,
+      "y": 24
+    },
+    {
+      "type": "willow",
+      "x": 59,
+      "y": 28
+    },
+    {
+      "type": "bush",
+      "x": 55,
+      "y": 17
+    },
+    {
+      "type": "bush",
+      "x": 57,
+      "y": 26
+    },
+    {
+      "type": "bush",
+      "x": 59,
+      "y": 17
+    },
+    {
+      "type": "trough",
+      "x": 54,
+      "y": 30,
+      "message": "The water trough ripples; a feather drifts on the surface."
+    },
+    {
+      "type": "haybale",
+      "x": 52,
+      "y": 32,
+      "message": "A hay bale, sun-warm and slightly itchy."
+    },
+    {
+      "type": "haybale",
+      "x": 55,
+      "y": 32,
+      "message": "A second bale waits under the hedge, sweet with clover."
+    },
+    {
+      "type": "cow",
+      "x": 52,
+      "y": 30,
+      "message": "A cow chews a slow mouthful of clover, tail swishing at the flies."
+    },
+    {
+      "type": "cow",
+      "x": 56,
+      "y": 30,
+      "message": "A broad cow stands in the hedge shade, content with the world."
+    },
+    {
+      "type": "bull",
+      "x": 53,
+      "y": 32,
+      "message": "The bull watches you sideways, unimpressed."
+    },
+    {
+      "type": "horse",
+      "x": 55,
+      "y": 30,
+      "message": "A chestnut horse dips its head toward the trough."
+    },
+    {
+      "type": "horse",
+      "x": 57,
+      "y": 30,
+      "message": "A grey horse stands at the hedge line, ears flicking at the breeze."
+    },
+    {
+      "type": "goat",
+      "x": 51,
+      "y": 32,
+      "message": "A goat eyes the hedge for a gap that is not there."
+    },
+    {
+      "type": "goat",
+      "x": 56,
+      "y": 32,
+      "message": "A small goat chews a mouthful of clover, beard wagging."
+    },
+    {
+      "type": "pig",
+      "x": 53,
+      "y": 30,
+      "message": "A pig roots at the ground, entirely happy about mud."
+    },
+    {
+      "type": "pig",
+      "x": 54,
+      "y": 32,
+      "message": "A pig roots between the hay bales, snout twitching at the grass."
+    },
+    {
+      "type": "chicken",
+      "x": 51,
+      "y": 30,
+      "message": "A brown hen scratches by the barn, muttering to herself."
+    },
+    {
+      "type": "koi",
+      "x": 31,
+      "y": 21,
+      "message": "A koi turns a slow circle in the pond's still centre, scales catching the light."
+    },
+    {
+      "type": "bass",
+      "x": 30,
+      "y": 22,
+      "message": "A bass holds steady in the shade of the western bank, unhurried."
+    },
+    {
+      "type": "minnow",
+      "x": 33,
+      "y": 21,
+      "message": "Minnows flick through the shallows in a silver ribbon."
+    },
+    {
+      "type": "lily",
+      "x": 28,
+      "y": 21,
+      "message": "A lily pad rests in the pond's quiet western corner."
+    },
+    {
+      "type": "lily",
+      "x": 30,
+      "y": 23,
+      "message": "A lily opens white along the southern shore."
+    },
+    {
+      "type": "lily",
+      "x": 33,
+      "y": 23,
+      "message": "A lily pad drifts near the dam, nudged by the slow spill."
+    },
+    {
+      "type": "well",
+      "x": 42,
+      "y": 23,
+      "message": "The village well, set just off the square. Cool water, drawn straight from the river veins under the grass."
+    },
+    {
+      "type": "bench",
+      "x": 38,
+      "y": 21,
+      "message": "A bench on the square's west side, looking across the paving to the well."
+    },
+    {
+      "type": "bench",
+      "x": 46,
+      "y": 21,
+      "message": "A bench in the flower garden, looking back across the square."
+    },
+    {
+      "type": "lamp",
+      "x": 40,
+      "y": 17,
+      "message": "A lantern on the north walk, lighting the way down to the square."
+    },
+    {
+      "type": "lamp",
+      "x": 38,
+      "y": 23,
+      "message": "A lamp at the square's south corner, where the lane slips away toward the farm."
+    },
+    {
+      "type": "stoneWall",
+      "x": 50,
+      "y": 29,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 51,
+      "y": 29,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 52,
+      "y": 29,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 53,
+      "y": 29,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 54,
+      "y": 29,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 55,
+      "y": 29,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 56,
+      "y": 29,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 57,
+      "y": 29,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 58,
+      "y": 29,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 58,
+      "y": 30,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 58,
+      "y": 31,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 58,
+      "y": 32,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 51,
+      "y": 33,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 52,
+      "y": 33,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 53,
+      "y": 33,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 54,
+      "y": 33,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 55,
+      "y": 33,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 56,
+      "y": 33,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 57,
+      "y": 33,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 58,
+      "y": 33,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stonePost",
+      "x": 50,
+      "y": 30,
+      "message": "The gatepost capstone is worn smooth by every hand that ever leaned on it."
+    },
+    {
+      "type": "stonePost",
+      "x": 50,
+      "y": 33,
+      "message": "The gatepost capstone is worn smooth by every hand that ever leaned on it."
+    },
+    {
+      "type": "scarecrow",
+      "x": 49,
+      "y": 33,
+      "message": "The scarecrow keeps watch over the fields and the gate alike."
+    },
+    {
+      "type": "mudHut",
+      "x": 18,
+      "y": 29,
+      "width": 2,
+      "height": 3,
+      "message": "A round mud hut by the river bend, herbs drying at the door and straw for a crown."
+    },
+    {
+      "type": "waterWheelHouse",
+      "x": 37,
+      "y": 24,
+      "width": 2,
+      "height": 3,
+      "message": "The wheel-house never sleeps: the river turns the wheel, the wheel turns the stones, and the stones grind the morning flour."
     }
   ],
   "landmarks": [
     {
       "id": "cottage",
-      "x": 14,
-      "y": 15,
+      "x": 43,
+      "y": 19,
       "label": "Cottage Clearing"
     },
     {
       "id": "pass",
-      "x": 18,
-      "y": 10,
+      "x": 52,
+      "y": 13,
       "label": "Cliffside Pass"
     },
     {
       "id": "meadow",
-      "x": 28,
-      "y": 9,
+      "x": 30,
+      "y": 33,
       "label": "Sunlit Meadow"
     },
     {
       "id": "pond",
-      "x": 34,
-      "y": 23,
+      "x": 31,
+      "y": 24,
       "label": "Willow Pond"
     },
     {
       "id": "farm",
-      "x": 26,
-      "y": 27,
+      "x": 45,
+      "y": 28,
       "label": "Sunroot Farm"
     },
     {
       "id": "campfire",
-      "x": 39,
-      "y": 27,
+      "x": 24,
+      "y": 31,
       "label": "Campfire Hollow"
     },
     {
       "id": "beach",
-      "x": 27,
+      "x": 12,
       "y": 35,
       "label": "Saltgrass Shore"
     },
     {
       "id": "highlands",
-      "x": 22,
-      "y": 7,
+      "x": 55,
+      "y": 6,
       "label": "Mirror Lake Uplands"
     },
     {
       "id": "orchard",
-      "x": 4,
-      "y": 16,
+      "x": 55,
+      "y": 22,
       "label": "The Old Orchard"
     },
     {
       "id": "lookout",
-      "x": 61,
-      "y": 15,
+      "x": 5,
+      "y": 24,
       "label": "Eastwind Lookout"
     },
     {
       "id": "store",
-      "x": 10,
-      "y": 23,
+      "x": 37,
+      "y": 20,
       "label": "The Village Store"
     },
     {
       "id": "garden",
-      "x": 18,
-      "y": 11,
+      "x": 46,
+      "y": 19,
       "label": "The Flower Garden"
     },
     {
       "id": "pasture",
-      "x": 10,
-      "y": 32,
+      "x": 54,
+      "y": 31,
       "label": "The Meadow Pasture"
     }
   ]

@@ -71,6 +71,12 @@ export const solidObjectTypes: Set<string> = new Set([
   'bench',
   'mailbox',
   'beeSkep',
+  'stoneWall',
+  'stonePost',
+  'house',
+  'hut',
+  'mudHut',
+  'waterWheelHouse',
   'well',
   'waterWheel'
 ])
