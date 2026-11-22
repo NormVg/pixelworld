@@ -7,20 +7,20 @@
     "y": 20
   },
   "ground": [
-    "CCCCCC..CCCCCCC..............................tCCCCCC-.CCCC.tCCCC",
-    "CCCCCC..CCCCCCC...............................CCCCC.-CCCCCt.CCCC",
-    "CCCCCC..C~~~CCC...............................CCCC.t-.CCCC.fCCCC",
-    "CCCCCC.t~~~~~CCttt......f...fffff.......ttttttCCffff.-CCCCf.CCCC",
-    "CCCCCCt~~~~~~~Ctttfffff...t.fffff.......ttttt.CCffff---CCC..CCCC",
-    "CCCCCC.~~~~~~~Ctttfffff..t..fffff.......ttttt.CCffff..C-CCt.CCCC",
-    "CCCCCC.t~~~~~CCf.fffffftttt.........fffff.....CCfffffff-CCffCCCC",
-    "CCCCCC..t.~~~CC...ff..ftttt.........fffff....tCCCC..fff-CCffCCCC",
-    "CCCCCC...ftt~~~~~.f..f.tttt.........fffff.....CCCCt.ff-fCCffCCCC",
-    "..............t~~~............ttttt..........tCCCC..ff-fCCffCCCC",
-    "..............ft~~~...........ttttt...........CCCC..f-ffCCffCCCC",
-    "..............ttt~~~.t........ttttt..........tCCCC..f-ffCCffCCCC",
-    "..................t~~~..ffff......ffffft.t....CCCC..-fffCCffCCCC",
-    "..................ttf~~~ffff......fffff.t...........--....ft....",
+    "CCCCCC..CCCCCCC..............................tCCC.CC-..CCC.t.CC.",
+    "CCCCCC..CCCCCCC...............................CC.CC.-.CCC.t..CC.",
+    "CCCCCC..C~~~CCC...............................CCC..t-..CC..fCC..",
+    "CCCCCC.t~~~~~CCttt......f...fffff.......ttttttCCffff.-..CCf...CC",
+    "CCCCCCt~~~~~~~Ctttfffff...t.fffff.......ttttt.CCffff---.CC..CC..",
+    "CCCCCC.~~~~~~~Ctttfffff..t..fffff.......ttttt.CCffff...-..t.CC..",
+    "CCCCCC.t~~~~~CCf.fffffftttt.........fffff.....CCfffffff-..ffCC..",
+    "CCCCCC..t.~~~CC...ff..ftttt.........fffff....tCCC...fff-..ffCC..",
+    "CCCCCC...ftt~~~~~.f..f.tttt.........fffff.....CC..t.ff-f..ffCC..",
+    "..............t~~~............ttttt..........tCC....ff-f..ffCC..",
+    "..............ft.AA...........ttttt...........CCC...f-ff..ffCC..",
+    "..............ttt~~~.t........ttttt..........tCC....f-ff..ffCC..",
+    "..................t~~~..ffff......ffffft.t....CC....-fff..ffCC..",
+    "..................ttf~~~ffff......fffff.t.....CC....--....ft....",
     "..................tt...~~~ff......ffffffff...........-..........",
     "......................ttf~~~...........fff....fff....-.t.t.t....",
     ".tt.ft..t..tt.f.......tt..~~~f....ff...fff....fff....-f.........",
@@ -33,13 +33,13 @@
     "tttftfft.ttt.ft-.............~~~~~~~tf.-tf.ftfffft....f.....ftf.",
     "ftt.t-ftttftttt-.............tftftDD...-..............t.....tff.",
     ".t..tt-ftt.t..t-.................t~~~..-..............f.....fft.",
-    ".tt.ft.-t..tt---..............t.~~~~...-ddddff....tt..f.....ftf.",
-    ".ft..t..-tf--...ff....ttt.ff.~~~~......-ccccff....tt..t.....tff.",
-    "..t..tt.f--ft....f.....t.f~~~~fftt.....-wwwwff....tt..fftftffft.",
+    ".tt.ft.-t..tt---..............t.~~~~...-....ff....tt..f.....ftf.",
+    ".ft..t..-tf--...ff....ttt.ff.~~~~......-....ff....tt..t.....tff.",
+    "..t..tt.f--ft....f.....t.f~~~~fftt.....-....ff....tt..fftftffft.",
     ".ttt.ft..tfftt..ff.fff.~~~~...ttt......-------....tt..ft.t.t....",
-    "t.ft..t..tt.ft.....ff~~~~..fffttt......-ddddtfddddff............",
-    "tt.t..tttft..t........AA...fff...tt....-cccctfccccffft.ftf......",
-    "tt.tt.ft..t..tt.tt..~~~.........ttt....-wwwwtfwwwwff.....t......",
+    "t.ft..t..tt.ft.....ff~~~~..fffttt......-....tf....ff............",
+    "tt.t..tttft..t........AA...fff...tt....-....tf....ffft.ftf......",
+    "tt.tt.ft..t..tt.tt..~~~.........ttt....-....tf....ff.....t......",
     "tt.ft..t..tt.ft..f~~~~........fftt.....-........................",
     "fts.t.sttsfts.ts.~~~~.ffftttff.fff.....-........................",
     "sssssssssssssssssDDssssssssssssssssssss-ssssssssssssssssssssssss",
@@ -95,7 +95,7 @@
       "type": "mailbox",
       "x": 41,
       "y": 15,
-      "message": "The little mailbox leans by the lane, its flag still up from yesterday\u2019s letter."
+      "message": "The little mailbox leans by the lane, its flag still up from yesterday’s letter."
     },
     {
       "type": "campfire",
@@ -119,43 +119,7 @@
       "type": "beeSkep",
       "x": 54,
       "y": 20,
-      "message": "Bees hum around the straw skep, busy with the orchard\u2019s first blossoms."
-    },
-    {
-      "type": "crop",
-      "x": 41,
-      "y": 27,
-      "message": "Green sprouts push through the tilled soil in neat little rows."
-    },
-    {
-      "type": "crop",
-      "x": 42,
-      "y": 28,
-      "message": "Golden wheat nods in the breeze, nearly ready for the sickle."
-    },
-    {
-      "type": "crop",
-      "x": 41,
-      "y": 31,
-      "message": "Young barley stands in tidy green lines."
-    },
-    {
-      "type": "crop",
-      "x": 42,
-      "y": 32,
-      "message": "The wet rows shine; the crop is coming in strong."
-    },
-    {
-      "type": "crop",
-      "x": 47,
-      "y": 31,
-      "message": "Bean vines climb their poles in the center strip."
-    },
-    {
-      "type": "crop",
-      "x": 48,
-      "y": 32,
-      "message": "The last row drinks deep and turns its leaves to the sun."
+      "message": "Bees hum around the straw skep, busy with the orchard’s first blossoms."
     },
     {
       "type": "driftwood",
@@ -1060,18 +1024,6 @@
       "message": "Minnows dart in a silver ribbon through the shallows."
     },
     {
-      "type": "crop",
-      "x": 42,
-      "y": 27,
-      "message": "The north field's second row fills in, every sprout shoulder to shoulder."
-    },
-    {
-      "type": "crop",
-      "x": 48,
-      "y": 31,
-      "message": "The center strip's rows close up tidy, beans climbing steady and true."
-    },
-    {
       "type": "chicken",
       "x": 47,
       "y": 25,
@@ -1085,8 +1037,8 @@
     },
     {
       "type": "haybale",
-      "x": 51,
-      "y": 28,
+      "x": 59,
+      "y": 29,
       "message": "A hay bale rests against the barn's east wall, sweet with clover and warm from the sun."
     },
     {
@@ -1330,7 +1282,7 @@
     {
       "type": "bass",
       "x": 18,
-      "y": 10,
+      "y": 11,
       "message": "A bass holds steady in the current, fins barely moving."
     },
     {
@@ -1400,12 +1352,6 @@
       "message": "A butterfly rides the tall grass, wings opening and closing like a slow breath."
     },
     {
-      "type": "butterfly",
-      "x": 30,
-      "y": 28,
-      "message": "A butterfly rests on the riverbank flowers, wings bright as a scrap of sky."
-    },
-    {
       "type": "dragonfly",
       "x": 20,
       "y": 30,
@@ -1441,7 +1387,7 @@
     {
       "type": "willow",
       "x": 55,
-      "y": 28
+      "y": 27
     },
     {
       "type": "willow",
@@ -1461,7 +1407,7 @@
     {
       "type": "oak",
       "x": 57,
-      "y": 28
+      "y": 27
     },
     {
       "type": "oak",
@@ -1481,7 +1427,7 @@
     {
       "type": "willow",
       "x": 59,
-      "y": 28
+      "y": 27
     },
     {
       "type": "bush",
@@ -1518,56 +1464,56 @@
     },
     {
       "type": "cow",
-      "x": 52,
-      "y": 30,
+      "x": 51,
+      "y": 29,
       "message": "A cow chews a slow mouthful of clover, tail swishing at the flies."
     },
     {
       "type": "cow",
-      "x": 56,
-      "y": 30,
+      "x": 58,
+      "y": 29,
       "message": "A broad cow stands in the hedge shade, content with the world."
     },
     {
       "type": "bull",
       "x": 53,
-      "y": 32,
+      "y": 31,
       "message": "The bull watches you sideways, unimpressed."
     },
     {
       "type": "horse",
-      "x": 55,
-      "y": 30,
+      "x": 56,
+      "y": 29,
       "message": "A chestnut horse dips its head toward the trough."
     },
     {
       "type": "horse",
-      "x": 57,
-      "y": 30,
+      "x": 51,
+      "y": 33,
       "message": "A grey horse stands at the hedge line, ears flicking at the breeze."
     },
     {
       "type": "goat",
-      "x": 51,
-      "y": 32,
+      "x": 58,
+      "y": 33,
       "message": "A goat eyes the hedge for a gap that is not there."
     },
     {
       "type": "goat",
-      "x": 56,
-      "y": 32,
+      "x": 53,
+      "y": 33,
       "message": "A small goat chews a mouthful of clover, beard wagging."
     },
     {
       "type": "pig",
-      "x": 53,
-      "y": 30,
+      "x": 59,
+      "y": 31,
       "message": "A pig roots at the ground, entirely happy about mud."
     },
     {
       "type": "pig",
-      "x": 54,
-      "y": 32,
+      "x": 56,
+      "y": 33,
       "message": "A pig roots between the hay bales, snout twitching at the grass."
     },
     {
@@ -1649,120 +1595,6 @@
       "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
     },
     {
-      "type": "stoneWall",
-      "x": 51,
-      "y": 29,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 52,
-      "y": 29,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 53,
-      "y": 29,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 54,
-      "y": 29,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 55,
-      "y": 29,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 56,
-      "y": 29,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 57,
-      "y": 29,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 58,
-      "y": 29,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 58,
-      "y": 30,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 58,
-      "y": 31,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 58,
-      "y": 32,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 51,
-      "y": 33,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 52,
-      "y": 33,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 53,
-      "y": 33,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 54,
-      "y": 33,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 55,
-      "y": 33,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 56,
-      "y": 33,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 57,
-      "y": 33,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
-      "type": "stoneWall",
-      "x": 58,
-      "y": 33,
-      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
-    },
-    {
       "type": "stonePost",
       "x": 50,
       "y": 30,
@@ -1790,11 +1622,347 @@
     },
     {
       "type": "waterWheelHouse",
-      "x": 37,
+      "x": 29,
       "y": 24,
       "width": 2,
       "height": 3,
       "message": "The wheel-house never sleeps: the river turns the wheel, the wheel turns the stones, and the stones grind the morning flour."
+    },
+    {
+      "type": "stoneWall",
+      "x": 50,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 51,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 52,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 53,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 54,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 55,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 56,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 57,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 58,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 59,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 60,
+      "y": 28,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 60,
+      "y": 29,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 60,
+      "y": 30,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 60,
+      "y": 31,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 60,
+      "y": 32,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 60,
+      "y": 33,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 51,
+      "y": 34,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 52,
+      "y": 34,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 53,
+      "y": 34,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 54,
+      "y": 34,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 55,
+      "y": 34,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 56,
+      "y": 34,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 57,
+      "y": 34,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 58,
+      "y": 34,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 59,
+      "y": 34,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 60,
+      "y": 34,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "stoneWall",
+      "x": 50,
+      "y": 34,
+      "width": 1,
+      "height": 1,
+      "message": "A dry-stone wall, old and sure, keeps the herd exactly where the herd wants to be."
+    },
+    {
+      "type": "sprout",
+      "x": 40,
+      "y": 27
+    },
+    {
+      "type": "sprout",
+      "x": 41,
+      "y": 27
+    },
+    {
+      "type": "sprout",
+      "x": 42,
+      "y": 27
+    },
+    {
+      "type": "sprout",
+      "x": 43,
+      "y": 27
+    },
+    {
+      "type": "sprout",
+      "x": 40,
+      "y": 28
+    },
+    {
+      "type": "sprout",
+      "x": 41,
+      "y": 28
+    },
+    {
+      "type": "sprout",
+      "x": 42,
+      "y": 28
+    },
+    {
+      "type": "sprout",
+      "x": 43,
+      "y": 28
+    },
+    {
+      "type": "sprout",
+      "x": 40,
+      "y": 31
+    },
+    {
+      "type": "sprout",
+      "x": 41,
+      "y": 31
+    },
+    {
+      "type": "sprout",
+      "x": 42,
+      "y": 31
+    },
+    {
+      "type": "sprout",
+      "x": 43,
+      "y": 31
+    },
+    {
+      "type": "sprout",
+      "x": 40,
+      "y": 32
+    },
+    {
+      "type": "sprout",
+      "x": 41,
+      "y": 32
+    },
+    {
+      "type": "sprout",
+      "x": 42,
+      "y": 32
+    },
+    {
+      "type": "sprout",
+      "x": 43,
+      "y": 32
+    },
+    {
+      "type": "sprout",
+      "x": 46,
+      "y": 31
+    },
+    {
+      "type": "sprout",
+      "x": 47,
+      "y": 31
+    },
+    {
+      "type": "sprout",
+      "x": 48,
+      "y": 31
+    },
+    {
+      "type": "sprout",
+      "x": 49,
+      "y": 31
+    },
+    {
+      "type": "sprout",
+      "x": 46,
+      "y": 32
+    },
+    {
+      "type": "sprout",
+      "x": 47,
+      "y": 32
+    },
+    {
+      "type": "sprout",
+      "x": 48,
+      "y": 32
+    },
+    {
+      "type": "sprout",
+      "x": 49,
+      "y": 32
     }
   ],
   "landmarks": [

@@ -56,7 +56,8 @@ export const terrainSprites = {
 
   // Farm ground.
   soil: farmSprites.soil,
-  crops: farmSprites.crops
+  crops: farmSprites.crops,
+  sprout: farmSprites.sprout
 } as const
 
 export const propSprites = {
@@ -90,6 +91,7 @@ export const propSprites = {
   fenceVertical: farmSprites.fenceVertical,
   crop: farmSprites.crops,
   crops: farmSprites.crops,
+  sprout: farmSprites.sprout,
 
   // Pasture animals for the meadow herd.
   cow: animalSprites.cow,
@@ -104,6 +106,7 @@ export const propSprites = {
   mailbox: cozySprites.mailbox,
   beeSkep: cozySprites.beeSkep,
   stoneWall: cozySprites.stoneWall,
+  stoneWallVertical: cozySprites.stoneWallVertical,
   stonePost: cozySprites.stonePost,
 
   // Street props redrawn at native 32px; these override the legacy lamp/sign.

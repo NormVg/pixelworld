@@ -766,150 +766,115 @@ const CROPS_PALETTE: PixelPalette = {
   b: '#b8862f', // wheat shade
 }
 
-/** 32x32 crops: four growth stages from seedlings to ripe wheat over tilled soil. */
-/** Stage 1: seedlings. */
-const CROPS_STAGE_0: PixelFrame = [
-  'SShhhhhhhhhhhSSSkkkdkkkkkkkSSSSh',
-  'hhddddddddddhhhhSSSSSSSSSSShhhdd',
-  'dhffffffffffddddhhhhhhhhhhddddff',
-  'fkkkkkkkkkkkfffdddddddddddfffkkk',
-  'kkkkkkkkkkkkkkkffffffdfffkkkkhkk',
-  'SSSSSSSSSSSkkkkkkkkkkhSkkkkkkdSS',
-  'hhhhhhhhhhSSSSkkkkkkkkkkkSSShhhh',
-  'ddddldddldhhhhlSSSlSSSdSlhhhlddd',
-  'ffdfflflffdddhhlhlhhhhhhdldlffff',
-  'kkkkkkgkdffffdddgddddddfffgkkkkk',
-  'kkkkkkGkkkkkffpfGffffffkkkGkkkkk',
-  'SSSSSkkkdkkkhkkkkkkkkkkkkkkkSSSS',
-  'hhhhhhhhSSSSkdkkkddkkdSSSShhhhhh',
-  'ddddddddhhhSSSdSSSSSSShhddddhdhd',
-  'fffffffddddhhhhhhhShhddddfffffff',
-  'kkkpkkkffddddddddddddfffkkkkkkkk',
-  'kkkkkkkkkkffffffffffkkkkkkkkkkkk',
-  'SSSSlhSklkkkkklkkklkkhkklSSSlSSS',
-  'hhhhhlSlSkkkkkklklkkSSdhhlhlhhhh',
-  'dddddhghhSSSSSSSgSShhhhdddgddddd',
-  'fdhffdGdhhhhhhhhGhhdddffffGfffff',
-  'kkkkhkkkdddddddkkkffffkkkkkkkkkk',
-  'kkkkkkkhSfffffffffkdkkkkkkkkkkkk',
-  'SSSkkkkkkkkkhkdkkkkkkSSSSSSSSSSS',
-  'dhhSSSdkkkkkkkkpkdSSShhhhhhhhhhS',
-  'dddhhhSSSSSSSSSSShhhdddddddddddh',
-  'ffddddhhhhhhhhhdddddffffffhfffdd',
-  'kkffldddldddddldfflfkkkdlkkklkff',
-  'kkkkklflffffffflklkdkkkkklklkkkk',
-  'SkkkkkgkkkkkkkkkgkkSSSSSSSgSSkkk',
-  'hSSSkkGkdkkkkkkSGShhdhhhhhGhhSSS',
-  'hhhhSkkkSSSSSSdkkkdddddddkkkhhhh',
+/** Shared tilled-earth base: clods, a soft diagonal ridge, and pebbles. */
+function drawSoilBase(grid: string[][]): void {
+  for (let y = 0; y < 32; y++) {
+    for (let x = 0; x < 32; x++) {
+      let ch = 'd'
+      const clod = cellNoise(x, y, 9)
+      if (clod === 0) ch = 'h'
+      else if (clod === 1) ch = 'S'
+      else if (clod === 2) ch = 'f'
+      // A soft diagonal furrow with gentle breaks; it wraps across tiles.
+      const ridge = (y - x + 32) % 32
+      if (ridge >= 9 && ridge <= 11) ch = cellNoise(x, y, 5) === 0 ? 'h' : 'S'
+      else if (ridge === 12) ch = 'h'
+      else if (ridge === 8) ch = 'f'
+      if (cellNoise(x, y, 31) === 0) {
+        ch = 'p'
+        buildingSet(grid, x, y + 1, 'k')
+      }
+      buildingSet(grid, x, y, ch)
+    }
+  }
+}
+
+/** One leafy seedling: a short stem, two side leaves, and a top leaf. */
+function drawCropPlant(grid: string[][], cx: number, baseY: number, height: number, ripe: boolean): void {
+  for (let i = 0; i < height; i++) buildingSet(grid, cx, baseY - i, 'G')
+  const leafY = baseY - Math.max(1, Math.floor(height / 2))
+  buildingSet(grid, cx - 1, leafY, 'g')
+  buildingSet(grid, cx - 2, leafY, 'l')
+  buildingSet(grid, cx + 1, leafY, 'g')
+  buildingSet(grid, cx + 2, leafY, 'l')
+  buildingSet(grid, cx - 1, baseY - height, 'l')
+  buildingSet(grid, cx, baseY - height, 'g')
+  buildingSet(grid, cx + 1, baseY - height, 'l')
+  if (ripe) {
+    buildingSet(grid, cx - 1, baseY - height - 1, 'y')
+    buildingSet(grid, cx, baseY - height - 1, 'Y')
+    buildingSet(grid, cx + 1, baseY - height - 1, 'y')
+    buildingSet(grid, cx, baseY - height - 2, 'b')
+  }
+}
+
+/** Plant positions per growth stage: loose rows, denser each stage. */
+const CROP_ROWS: ReadonlyArray<ReadonlyArray<readonly [number, number, number, boolean]>> = [
+  [
+    [6, 10, 3, false],
+    [16, 9, 4, false],
+    [26, 11, 3, false],
+    [10, 22, 4, false],
+    [20, 21, 3, false],
+    [28, 23, 4, false]
+  ],
+  [
+    [4, 9, 4, false],
+    [12, 10, 5, false],
+    [20, 8, 4, false],
+    [28, 10, 5, false],
+    [8, 21, 5, false],
+    [16, 22, 4, false],
+    [24, 20, 5, false],
+    [29, 22, 4, false]
+  ],
+  [
+    [3, 8, 5, false],
+    [9, 10, 6, false],
+    [16, 7, 5, false],
+    [23, 9, 6, false],
+    [29, 8, 5, false],
+    [5, 20, 6, false],
+    [12, 22, 5, false],
+    [19, 19, 6, false],
+    [26, 21, 5, false]
+  ],
+  [
+    [3, 8, 6, true],
+    [8, 10, 7, true],
+    [14, 7, 6, true],
+    [20, 9, 7, true],
+    [26, 7, 6, true],
+    [29, 9, 7, true],
+    [4, 20, 7, true],
+    [10, 22, 6, true],
+    [16, 19, 7, true],
+    [22, 21, 6, true],
+    [28, 19, 7, true]
+  ]
 ]
+
+/** 32x32 crop stage: leafy seedlings in loose rows over tilled earth. */
+function composeCropStage(stage: number): PixelFrame {
+  const grid = emptyBuildingGrid(32, 32)
+  drawSoilBase(grid)
+  for (const [cx, baseY, height, ripe] of CROP_ROWS[stage] ?? []) {
+    drawCropPlant(grid, cx, baseY, height, ripe)
+  }
+  return grid.map((row) => row.join(''))
+}
+
+/** Stage 1: sparse seedlings. */
+const CROPS_STAGE_0: PixelFrame = composeCropStage(0)
 
 /** Stage 2: young sprouts. */
-const CROPS_STAGE_1: PixelFrame = [
-  'SShhhhhhhhhhhSSSkkkdkkkkkkkSSSSh',
-  'hhddddddddddhhhhSSSSSSSSSSShhhdd',
-  'dhffffffffffddddhhhhhhhhhhddddff',
-  'fkkkkkkkkkkkfffdddddddddddfffkkk',
-  'kkkkkkkkkkkkkkkffffffdfffkkkkhkk',
-  'SSSSSlSlSSSkkkklklkkkhSkklklkdSS',
-  'hhhhlhlhlhSSSSlklklkkkkklSlSlhhh',
-  'dddddlGlddhhhhSlGlSSSSdShlGldddd',
-  'ffdfffgfffdddhhhghhhhhhhddgfffff',
-  'kkkkkkgkdffffdddgddddddfffgkkkkk',
-  'kkkkkkGkkkkkffpfGffffffkkkGkkkkk',
-  'SSSSSkkkdkkkhkkkkkkkkkkkkkkkSSSS',
-  'hhhhhhhhSSSSkdkkkddkkdSSSShhhhhh',
-  'ddddddddhhhSSSdSSSSSSShhddddhdhd',
-  'fffffffddddhhhhhhhShhddddfffffff',
-  'kkkpklklfddddddldldddfffklklkkkk',
-  'kkkklklklkfffflflflfkkkklklklkkk',
-  'SSSSSlGlkkkkkkklGlkkkhkkSlGldSSS',
-  'hhhhhSgSSkkkkkkhgkkkSSdhhhghhhhh',
-  'dddddhghhSSSSSSSgSShhhhdddgddddd',
-  'fdhffdGdhhhhhhhhGhhdddffffGfffff',
-  'kkkkhkkkdddddddkkkffffkkkkkkkkkk',
-  'kkkkkkkhSfffffffffkdkkkkkkkkkkkk',
-  'SSSkkkkkkkkkhkdkkkkkkSSSSSSSSSSS',
-  'dhhSSSdkkkkkkkkpkdSSShhhhhhhhhhS',
-  'dddhhlSlSSSSSSSlSlhhdddddldldddh',
-  'ffddldlhlhhhhhldldldfffflflflfdd',
-  'kkffflGldddddddlGlffkkkdklGlkkff',
-  'kkkkkfgfffffffffgkkdkkkkkkgkkkkk',
-  'SkkkkkgkkkkkkkkkgkkSSSSSSSgSSkkk',
-  'hSSSkkGkdkkkkkkSGShhdhhhhhGhhSSS',
-  'hhhhSkkkSSSSSSdkkkdddddddkkkhhhh',
-]
+const CROPS_STAGE_1: PixelFrame = composeCropStage(1)
 
-/** Stage 3: mature plants. */
-const CROPS_STAGE_2: PixelFrame = [
-  'SShhhhhhhhhhhSSSkkkdkkkkkkkSSSSh',
-  'hhddddddddddhhhhSSSSSSSSSSShhhdd',
-  'dhffffffffffddddhhhhhhhhhhddddff',
-  'fkkkklklkkkkfffldldddddddlflfkkk',
-  'kkkklklklkkkkklflflffdfflklklhkk',
-  'SSSlSlGlSlSkklklGlklkhSlklGlklSS',
-  'hhhhlGGGlhSSSSlGGGlkkkkklGGGlhhh',
-  'dddddlGlddhhhhSlGlSSSSdShlGldddd',
-  'ffdfffgfffdddhhhghhhhhhhddgfffff',
-  'kkkkkkgkdffffdddgddddddfffgkkkkk',
-  'kkkkkkGkkkkkffpfGffffffkkkGkkkkk',
-  'SSSSSkkkdkkkhkkkkkkkkkkkkkkkSSSS',
-  'hhhhhhhhSSSSkdkkkddkkdSSSShhhhhh',
-  'dddddldlhhhSSSdlSlSSSShhdldlhdhd',
-  'fffflfldlddhhhlhlhlhhdddlflflfff',
-  'kkklklGlfldddldlGldldfflklGlklkk',
-  'kkkklGGGlkfffflGGGlfkkkklGGGlkkk',
-  'SSSSSlGlkkkkkkklGlkkkhkkSlGldSSS',
-  'hhhhhSgSSkkkkkkhgkkkSSdhhhghhhhh',
-  'dddddhghhSSSSSSSgSShhhhdddgddddd',
-  'fdhffdGdhhhhhhhhGhhdddffffGfffff',
-  'kkkkhkkkdddddddkkkffffkkkkkkkkkk',
-  'kkkkkkkhSfffffffffkdkkkkkkkkkkkk',
-  'SSSkklklkkkkhkdlklkkkSSSSlSlSSSS',
-  'dhhSlSlklkkkkklpldlSShhhlhlhlhhS',
-  'dddlhlGlSlSSSlSlGlhldddldlGldldh',
-  'ffddlGGGlhhhhhlGGGldfffflGGGlfdd',
-  'kkffflGldddddddlGlffkkkdklGlkkff',
-  'kkkkkfgfffffffffgkkdkkkkkkgkkkkk',
-  'SkkkkkgkkkkkkkkkgkkSSSSSSSgSSkkk',
-  'hSSSkkGkdkkkkkkSGShhdhhhhhGhhSSS',
-  'hhhhSkkkSSSSSSdkkkdddddddkkkhhhh',
-]
+/** Stage 3: mature leafy plants. */
+const CROPS_STAGE_2: PixelFrame = composeCropStage(2)
 
-/** Stage 4: ripe wheat. */
-const CROPS_STAGE_3: PixelFrame = [
-  'SShhhhhhhhhhhSSSkkkdkkkkkkkSSSSh',
-  'hhddYdYdYdddhhYhYSYSSSSSYSYhYhdd',
-  'dhfYyYyYyYffdYyYyYyYhhhYyYyYyYff',
-  'fkkkyYYYykkkffyYYYydddddyYYYykkk',
-  'kkkkkyYykkkkkkkyYyfffdfffyYykhkk',
-  'SSSSSSbSSSSkkkkkbkkkkhSkkkbkkdSS',
-  'hhhhhhghhhSSSSkkgkkkkkkkkSgShhhh',
-  'ddddddgdddhhhhSSgSSSSSdShhghdddd',
-  'ffdfffgfffdddhhhghhhhhhhddgfffff',
-  'kkkkkkgkdffffdddgddddddfffgkkkkk',
-  'kkkkkkGkkkkkffpfGffffffkkkGkkkkk',
-  'SSSSYkYkYkkkhkYkYkYkkkkkYkYkYSSS',
-  'hhhYyYyYyYSSkYyYyYyYkdSYyYyYyYhh',
-  'ddddyYYYyhhSSSyYYYySSShhyYYYydhd',
-  'fffffyYydddhhhhyYyShhddddyYyffff',
-  'kkkpkkbffdddddddbddddfffkkbkkkkk',
-  'kkkkkkgkkkffffffgfffkkkkkkgkkkkk',
-  'SSSSShgkkkkkkkkkgkkkkhkkSSgSdSSS',
-  'hhhhhSgSSkkkkkkhgkkkSSdhhhghhhhh',
-  'dddddhghhSSSSSSSgSShhhhdddgddddd',
-  'fdhffdGdhhhhhhhhGhhdddffffGfffff',
-  'kkkkYkYkYdddddYkYkYfffkkYkYkYkkk',
-  'kkkYyYyYyYfffYyYyYyYkkkYyYyYyYkk',
-  'SSSkyYYYykkkhkyYYYykkSSSyYYYySSS',
-  'dhhSSyYykkkkkkkyYySSShhhhyYyhhhS',
-  'dddhhhbSSSSSSSSSbhhhddddddbddddh',
-  'ffddddghhhhhhhhdgdddffffffgfffdd',
-  'kkfffdgdddddddddgfffkkkdkkgkkkff',
-  'kkkkkfgfffffffffgkkdkkkkkkgkkkkk',
-  'SkkkkkgkkkkkkkkkgkkSSSSSSSgSSkkk',
-  'hSSSkkGkdkkkkkkSGShhdhhhhhGhhSSS',
-  'hhhhSkkkSSSSSSdkkkdddddddkkkhhhh',
-]
+/** Stage 4: ripe grain heads. */
+const CROPS_STAGE_3: PixelFrame = composeCropStage(3)
 
 /* ------------------------------------------------------------------ */
 /* Soil                                                             */
@@ -925,41 +890,38 @@ const SOIL_PALETTE: PixelPalette = {
   p: '#9a8f80', // pebble
 }
 
-/** 32x32 tilled soil: six-row furrow rhythm with sunlit ridges, deep shadows, clods and pebbles. */
-const SOIL: PixelFrame = [
-  'SShhhhhhhhhhhSSSkkkdkkkkkkkSSSSh',
-  'hhdddddhhdddhhhhSSSSSShShSShhhdd',
-  'hdffffffffffddddhhhhhhhhhhddddff',
-  'fkkkkkkkkkkkfffdddddddddddfffkkh',
-  'kkkkkkkkkkkkkkkffhhffdfffkkkkdkk',
-  'SSSSSSSSSSSkkpkkkkkkkdkhkkkkkdSS',
-  'hhhhhhhhhhSSSSkkkkkkkpkkkSShhhhh',
-  'ddddddddddhhhhSSSSSSSSdShhhhdddd',
-  'ffdfffffffdddhhhhhhhhhhhdddfpfff',
-  'kkkkkkkkdfhffddddddddddhfffkkkkk',
-  'kkkkkkkkkkkkfffffffffffkkkkkkkkk',
-  'SShSSSSSdkkkdhkkkkkkkkkkkpShSSSS',
-  'hhhhhhhhSSSSkdkkkddkkdSSSShhhhhh',
-  'dddddddhhhhSSSdSSSSSShShdddddddd',
-  'fffffffdhddhhhhhhhShhhdddfffffff',
-  'kkkkkkkffddddddddddddfffkkkkkkkk',
-  'kkkkkkkkkkffpfffffhSkkkkkkkkkkkk',
-  'SShSShSkkkkkkkkkkkkkkdkkSSSSdSSS',
-  'hhhhhSSSShkkkkkdkhkkSSdhhhhhhhhh',
-  'dddddhhhhSSSSSSSSSShhhhddddddddd',
-  'hddffdddhhhhhhhhhhhdddffffffffff',
-  'kkkhdfffddddddddddffffkkkkkkkkkk',
-  'hhkkkkkdffffffffffkdkkkkkkpkkkkk',
-  'SSSkkkkkhkkkdkdkkkkkkSSSSSSSSSSS',
-  'dhhSSSdkkkkkkkkkkdShShhhhhhhhhhS',
-  'dddhhhhSSSSSShSSShhhdddddhdddddh',
-  'ffddddhhhhhhhhhdhdddffffffdffhdd',
-  'kkfffdddddddddddffffkkkdkkkkkkff',
-  'kkkkkfffffffffffkkkdkkkkhkhkpkkk',
-  'SkkkkkhkkkkkkhkkkhkSSSSSSSSSSkkh',
-  'hShSkkkkdkkkkkkSSShhdhhhhhhhhSSS',
-  'hhhhSddSSSSSSSdhhhddddddddhdhhhh',
-]
+/** 32x32 tilled soil: irregular clods, a soft diagonal furrow, and pebbles. */
+const SOIL: PixelFrame = (() => {
+  const grid = emptyBuildingGrid(32, 32)
+  drawSoilBase(grid)
+  return grid.map((row) => row.join(''))
+})()
+
+/**
+ * 32x32 transparent sprout cluster: leafy seedlings on small soil mounds.
+ * The farm grows its crops as props on grass, so no tile ever reads as a
+ * brown block; only the plants and their little mounds are opaque.
+ */
+const SPROUT: PixelFrame = (() => {
+  const grid = emptyBuildingGrid(32, 32)
+  const plants: ReadonlyArray<readonly [number, number, number]> = [
+    [6, 26, 8],
+    [14, 24, 9],
+    [22, 26, 8],
+    [28, 28, 6],
+    [10, 30, 6],
+    [19, 30, 7],
+    [26, 31, 5]
+  ]
+  for (const [cx, baseY, height] of plants) {
+    // A three-pixel soil mound grounds the plant without tiling a block.
+    buildingSet(grid, cx - 1, baseY + 1, 'f')
+    buildingSet(grid, cx, baseY + 1, 'd')
+    buildingSet(grid, cx + 1, baseY + 1, 'f')
+    drawCropPlant(grid, cx, baseY, height, false)
+  }
+  return grid.map((row) => row.join(''))
+})()
 
 export const farmSprites: {
   barn: PixelSprite
@@ -974,6 +936,7 @@ export const farmSprites: {
   fenceVertical: PixelSprite
   crops: PixelSprite
   soil: PixelSprite
+  sprout: PixelSprite
 } = {
   barn: { palette: BARN_PALETTE, frames: [BARN], frameMs: 1000 },
   campfire: { palette: CAMPFIRE_PALETTE, frames: CAMPFIRE_FRAMES, frameMs: 360 },
@@ -987,4 +950,5 @@ export const farmSprites: {
   fenceVertical: { palette: FENCE_PALETTE, frames: [FENCE_VERTICAL], frameMs: 1000 },
   crops: { palette: CROPS_PALETTE, frames: [CROPS_STAGE_0, CROPS_STAGE_1, CROPS_STAGE_2, CROPS_STAGE_3], frameMs: 2400 },
   soil: { palette: SOIL_PALETTE, frames: [SOIL], frameMs: 1000 },
+  sprout: { palette: CROPS_PALETTE, frames: [SPROUT], frameMs: 1000 },
 }

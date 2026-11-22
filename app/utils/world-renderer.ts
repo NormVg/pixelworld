@@ -207,6 +207,11 @@ const SHEAR_PX_PER_TILE = 0
  * in the outflow, the way a working mill wheel is mounted. */
 const WATER_WHEEL_SINK_PX = 56
 
+/** The mill house sinks so the river cuts across the wheel just above its hub:
+ * the wheel's lower half turns in the water and the sprite's bottom edge hides
+ * under the surface instead of clipping the arc. */
+const WATER_WHEEL_HOUSE_SINK_PX = 24
+
 /** Character the map uses for water; also the pond fish live in. */
 const WATER_CHAR = '~'
 const CLIFF_CHAR = 'C'
@@ -244,7 +249,7 @@ const KIND_BANK_KEYS: Readonly<Record<GroundKind, readonly string[]>> = {
   water: ['water'],
   flower: ['flower'],
   tallGrass: ['tallGrass', 'grassTall'],
-  cliff: ['cliff', 'cliffFace'],
+  cliff: ['cliffFace', 'cliff'],
   soil: ['soil', 'tilled', 'farmland', 'dirt'],
   crop: ['crop', 'crops', 'wheat', 'grain', 'sprout', 'field'],
   flat: [],
@@ -292,6 +297,20 @@ const FLYER_PACE: Readonly<Record<string, { loop: number; amp: number; freq: num
 }
 
 const DEFAULT_FLYER_PACE = { loop: 1, amp: 0.7, freq: 0.5 } as const
+
+/**
+ * Bugs are authored at 32px for detail, but a 32px butterfly dwarfs a
+ * 22x16 bird. Each species is drawn at a compact on-screen size instead:
+ * the monarch 14x12, the dragonfly 18x14, the beetle 10x8, the firefly 8x8.
+ * Birds keep their native size, so the garden reads at the right scale.
+ */
+const FLYER_DRAW_SCALE: Readonly<Record<string, { w: number; h: number }>> = {
+  monarch: { w: 14 / 32, h: 12 / 32 },
+  butterfly: { w: 14 / 32, h: 12 / 32 },
+  dragonfly: { w: 18 / 32, h: 14 / 32 },
+  beetle: { w: 10 / 32, h: 8 / 28 },
+  firefly: { w: 8 / 32, h: 8 / 28 }
+}
 
 /** Object types that swim and so follow pond loops, not the prop scene. */
 const FISH_TYPES: ReadonlySet<string> = new Set(['fish', 'koi', 'bass'])
@@ -357,6 +376,8 @@ const SHADOW_PROFILES: Readonly<Record<string, ShadowProfile>> = {
   waterWheelHouse: { rxFactor: 0.62, minRxTiles: 0.7, ryTiles: 0.22, coreShare: 0.75, lean: 0.1, dabAlpha: 0.3, contactAlpha: 0.4 },
   stoneWall: { rxFactor: 0.8, minRxTiles: 0.8, ryTiles: 0.12, coreShare: 0.8, lean: 0.05, dabAlpha: 0.26, contactAlpha: 0.36 },
   stonePost: { rxFactor: 0.62, minRxTiles: 0.5, ryTiles: 0.14, coreShare: 0.72, lean: 0.1, dabAlpha: 0.28, contactAlpha: 0.38 },
+  // A seedling is a tiny prop: a small, soft dab, not a field-wide ellipse.
+  sprout: { rxFactor: 0.3, minRxTiles: 0.16, ryTiles: 0.05, coreShare: 0.45, lean: 0.04, dabAlpha: 0.16, contactAlpha: 0.2 },
   // Fence pieces overlap into one continuous line under a run.
   fence: { rxFactor: 0.55, minRxTiles: 0.85, ryTiles: 0.13, coreShare: 0.8, lean: 0.05, dabAlpha: 0.26, contactAlpha: 0.36 },
   gate: { rxFactor: 0.58, minRxTiles: 0.75, ryTiles: 0.16, coreShare: 0.8, lean: 0.06, dabAlpha: 0.28, contactAlpha: 0.38 },
@@ -867,20 +888,6 @@ function buildCliffLip(size: number, tones: GrassTones): RasterSprite {
   return spriteOf([rowsToFrame(rows, palette)])
 }
 
-/** Faint horizontal strata bands laid over the rock face. */
-function buildCliffStrata(size: number): RasterSprite {
-  const rows = emptyRows(size, size)
-  const palette = { b: 'rgba(74, 48, 32, 0.2)', c: 'rgba(58, 40, 26, 0.16)' }
-  const band1 = Math.floor(size * 0.42)
-  const band2 = Math.floor(size * 0.68)
-  for (let x = 0; x < size; x++) {
-    rows[band1][x] = 'b'
-    if (band1 + 1 < size) rows[band1 + 1][x] = 'c'
-    if (Math.floor(size * 0.3) <= x) rows[band2][x] = 'c'
-  }
-  return spriteOf([rowsToFrame(rows, palette)])
-}
-
 /** Dark left edge of a cliff run; the light comes from the top left. */
 function buildCliffEdgeDark(size: number): RasterSprite {
   const rows = emptyRows(size, size)
@@ -895,7 +902,7 @@ function buildCliffEdgeDark(size: number): RasterSprite {
 /** Sunlit right edge of a cliff run, one shade lifted. */
 function buildCliffEdgeLight(size: number): RasterSprite {
   const rows = emptyRows(size, size)
-  const palette = { l: 'rgba(200, 149, 90, 0.35)', L: 'rgba(200, 149, 90, 0.18)' }
+  const palette = { l: 'rgba(196, 202, 210, 0.35)', L: 'rgba(196, 202, 210, 0.18)' }
   for (let y = 0; y < size; y++) {
     rows[y][size - 1] = 'l'
     if (size > 1) rows[y][size - 2] = 'L'
@@ -907,7 +914,7 @@ function buildCliffEdgeLight(size: number): RasterSprite {
 function buildCliffRubble(size: number): RasterSprite {
   const rng = mulberry32(0x4b01e)
   const rows = emptyRows(size, size)
-  const palette = { r: 'rgba(58, 40, 28, 0.4)', R: 'rgba(40, 28, 20, 0.3)' }
+  const palette = { r: 'rgba(90, 96, 104, 0.4)', R: 'rgba(70, 76, 84, 0.3)' }
   for (let i = 0; i < Math.max(4, Math.floor(size * 0.4)); i++) {
     const x = Math.floor(rng() * size)
     rows[size - 2][x] = rng() < 0.5 ? 'r' : 'R'
@@ -2103,6 +2110,11 @@ export class WorldRenderer {
     const entries: SceneEntry[] = []
     const fish: FishMotion[] = []
     const bugs: ButterflyMotion[] = []
+    // The paddock ring is authored as one stoneWall object per tile, so a
+    // wall tile's run direction comes from its neighbours, not its footprint.
+    const stoneWallKeys = new Set(
+      worldMap.objects.filter((item) => item.type === 'stoneWall').map((item) => `${item.x},${item.y}`)
+    )
 
     for (const object of worldMap.objects) {
       const hash = hashCoordinates(object.x, object.y, object.type.length * 31)
@@ -2118,11 +2130,18 @@ export class WorldRenderer {
         bugs.push(this.buildButterflyMotion(object, hash))
         continue
       }
-      // A fence or gate on a vertical run needs its vertical sprite; a
-      // horizontal run keeps the horizontal one.
+      // A fence, gate, or stone wall on a vertical run needs its vertical
+      // sprite; a horizontal run keeps the horizontal one. Stone walls are
+      // single-tile objects, so their run direction is read from neighbours:
+      // a north or south wall with no east or west wall is a vertical run.
       const isVerticalRun =
         (object.type === 'fence' && footH > footW) ||
-        (object.type === 'gate' && footH >= footW)
+        (object.type === 'gate' && footH >= footW) ||
+        (object.type === 'stoneWall' &&
+          !stoneWallKeys.has(`${object.x - 1},${object.y}`) &&
+          !stoneWallKeys.has(`${object.x + 1},${object.y}`) &&
+          (stoneWallKeys.has(`${object.x},${object.y - 1}`) ||
+            stoneWallKeys.has(`${object.x},${object.y + 1}`)))
       const sprite = this.propSprite(isVerticalRun ? `${object.type}Vertical` : object.type)
       const base = sprite.frames[0]
       const width = (base?.width ?? this.tileSize) * this.spriteScale
@@ -2462,12 +2481,13 @@ export class WorldRenderer {
       const canvas = this.frameCanvas('overlay', name, sprite, 0)
       if (canvas) ctx.drawImage(canvas, sx, sy + dy)
     }
-    // A vertical run reads as one face: grass lip on the crown row, strata
-    // down the middle, rubble and contact shadow where it meets the ground.
+    // A vertical run reads as one face: grass lip on the crown row, the
+    // sprite's own organic rock masses down the middle, and rubble plus a
+    // contact shadow where it meets the ground. No horizontal strata band:
+    // the face is grey stone, not stacked timber.
     if (!aboveIsCliff) {
       drawOverlay('cliffLip', this.overlaySprite('cliffLip', () => buildCliffLip(n, this.grassTones)), 0)
     }
-    drawOverlay('cliffStrata', this.overlaySprite('cliffStrata', () => buildCliffStrata(n)), 0)
     if (!belowIsCliff) {
       drawOverlay('cliffRubble', this.overlaySprite('cliffRubble', () => buildCliffRubble(n)), 0)
       drawOverlay('cliffContact', this.overlaySprite('cliffContact', () => buildCliffContact(n)), 0)
@@ -3362,7 +3382,12 @@ export class WorldRenderer {
     // The water wheel sits in the river: its paddle arc and foam dip below
     // the tile-bottom anchor while the hub stays above the waterline. The
     // shadow still uses entry.baseY, so it stays on the base tile.
-    const sink = entry.type === 'waterWheel' ? WATER_WHEEL_SINK_PX * this.spriteScale : 0
+    const sink =
+      entry.type === 'waterWheel'
+        ? WATER_WHEEL_SINK_PX * this.spriteScale
+        : entry.type === 'waterWheelHouse'
+          ? WATER_WHEEL_HOUSE_SINK_PX * this.spriteScale
+          : 0
     const sy = Math.round(feetY - entry.height + entry.basePad + sink)
     if (sx + entry.width < -this.cullMargin || sx > this.viewWidth + this.cullMargin) return
     if (sy + entry.height < -this.cullMargin || sy > this.viewHeight + this.cullMargin) return
@@ -3502,8 +3527,9 @@ export class WorldRenderer {
       const mirror = to.x >= from.x
       const frame = frameAt(time + motion.phase * 900, this.butterflySchedule)
       const base = motion.sprite.frames[0]
-      const width = (base?.width ?? this.tileSize) * this.spriteScale
-      const height = (base?.height ?? this.tileSize) * this.spriteScale
+      const scale = FLYER_DRAW_SCALE[motion.key.split(':')[0]] ?? { w: 1, h: 1 }
+      const width = (base?.width ?? this.tileSize) * this.spriteScale * scale.w
+      const height = (base?.height ?? this.tileSize) * this.spriteScale * scale.h
       const cx = Math.round(this.projectX(px, py, camX, camY))
       const cy = Math.round(this.projectY(py, camY))
       const sx = Math.round(cx - width / 2)
@@ -3511,7 +3537,7 @@ export class WorldRenderer {
       if (sx < -this.cullMargin || sx > this.viewWidth + this.cullMargin) continue
       if (sy < -this.cullMargin || sy > this.viewHeight + this.cullMargin) continue
       const canvas = this.frameCanvas('prop', motion.key, motion.sprite, frame, mirror)
-      if (canvas) ctx.drawImage(canvas, sx, sy)
+      if (canvas) ctx.drawImage(canvas, sx, sy, width, height)
     }
   }
 

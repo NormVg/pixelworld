@@ -5,17 +5,21 @@
  * resolution. Three pieces compose a cliff run:
  *
  * - `face` is 32x96: three stacked 32px bands. It carries a grass lip that
- *   overhangs the rock, three strata bands with wavy seams, two wandering
- *   cracks, moss in the crevices, and a rubble base. Anchor it at the top of
- *   the run; the bottom row is the contact line.
+ *   overhangs the rock, irregular grey-stone ledges with short staggered
+ *   shelves, two wandering vertical cracks, moss tufts clinging to the
+ *   ledges, and a rubble base. Anchor it at the top of the run; the bottom
+ *   row is the contact line.
  * - `top` is 32x32: the walkable grass cap. A dark rim marks the front edge
- *   and a 4px rock lip shows the ledge's thickness.
- * - `rubble` is 32x32 and mostly transparent: loose stones, pebbles, and
- *   grass tufts to scatter over the base of a face.
+ *   and a 4px grey rock lip shows the ledge's thickness.
+ * - `rubble` is 32x32 and mostly transparent: loose grey stones, pebbles,
+ *   and grass tufts to scatter over the base of a face.
  *
  * Conventions:
  * - Every row is exactly 32 characters; each character maps to a color in
  *   `CLIFF_PALETTE`, and '.' is transparent.
+ * - The rock is cool grey stone, not warm strata: broad irregular masses
+ *   with rounded weathered edges, short broken shelves, and vertical
+ *   fractures. No continuous horizontal grain lines.
  * - Light falls from the top left. Highlights sit on the top and left of
  *   each rock mass, shade piles into the bottom right, and the grass lip
  *   casts a dark under-shadow onto the rock.
@@ -41,23 +45,23 @@ const CLIFF_PALETTE: PixelPalette = {
   g: '#35915f', // deep blade
   h: '#2a6e4a', // grass base shadow
   o: '#2a2431', // rim / outline
-  r: '#b0793f', // sunlit rock
-  R: '#9a6534', // rock mid
-  s: '#8a5a2e', // rock shade
-  t: '#6e4526', // deep rock
-  u: '#4a3020', // crack
-  v: '#c8955a', // rock highlight
-  w: '#d9a86a', // bright edge
+  r: '#a8aeb6', // sunlit grey stone
+  R: '#8a9099', // mid grey stone
+  s: '#6b717a', // grey stone shade
+  t: '#4e545c', // deep grey stone
+  u: '#3a3f46', // crack
+  v: '#c4cad2', // grey highlight
+  w: '#d8dde3', // bright edge
   m: '#5f8a4a', // moss
   M: '#4a6e3a', // dark moss
-  n: '#8a6a4a', // rubble mid
-  p: '#a8845c', // rubble light
-  q: '#5a3e28', // rubble shadow
-  k: '#3a2618', // contact shadow
-  x: '#241a12', // deepest shadow
+  n: '#7d838c', // rubble mid
+  p: '#9aa0a8', // rubble light
+  q: '#5a6068', // rubble shadow
+  k: '#2b2f34', // contact shadow
+  x: '#1b1e22', // deepest shadow
 }
 
-/** Three stacked 32px bands: grass lip, strata, rubble base. */
+/** Three stacked 32px bands: grass lip, grey stone ledges, rubble base. */
 const CLIFF_FACE: PixelFrame = [
   'cfccddbbaaaaafaaaadfccddddaabbbb',
   'ccccddbbfgaaaeaaaaddcfdfffaabbbb',
@@ -71,82 +75,82 @@ const CLIFF_FACE: PixelFrame = [
   'gegexkgkekkekkkxgxkkgkkgkggegxke',
   'kkkkxkkkxggxgggkkkxkkkgkkkkkkkkk',
   'ggkkkkkkgxxkxxxkkxkxkkxxxggkkkxk',
-  'vvvRrrrrrvvvrrrvvRvvvRvRrrrvRvvv',
-  'rrrsssmRRmrrrrrrrrrrxrrrsssrrrrr',
-  'RRRsMsmRRmrxsssRRRRRxRRRsssRRRrr',
-  'RRRRRmRRmrursssrrrssxrrrrrrRRsRR',
-  'sRRMMmRRRRursssrrsssxusrrrrRRRRR',
-  'RRRmRmRmmrxrsssrrrsvxursrrrRsRRs',
-  'srrrmmRmRmuRRRRrsrrvxusssRRrrrss',
-  'srrrrrsRRRuRRRRrrrrvxussRRRrrsss',
-  'srrrrrRRRsRuRsRrrrrrxussRRRrrrss',
-  'rrrRRRrrrrxRrrrsssRRxsssrrsrsrrr',
-  'srrRRsrrrruRrrrsssRvxussrrrrrsrr',
-  'rrrRRRrrrrxRrrrsssRRvxusrsrrrrrr',
-  'sRRRRRssssRxRRRrrrssvxuRRRRRRRrr',
-  'sRRsRRssssRuRRRrrssssvxuRsRRRRrr',
-  'RRRRsRsssRxsRRRsrrsssvxuRRRRRRrr',
-  'RRRsrrsssrrssssssRRRvxuxvRvsvsrs',
-  'ssssssRRRsssmmsmsmMmmvxuuuuxxvsv',
-  'ssssssRRRsssmmmssmMvMuxuuxxxxuxu',
-  'utttttuvtvvvMtmmMmmmMuxutttttxxx',
-  'vvvvvuvuvuuumxMxmMxmmvxtutttttut',
-  'uuuxxxuxuuxumMmuMMttmvxuRRRrrrrr',
-  'xxuuuuvxuttstttRRtRRRRxRRRRRRRmR',
-  'ststtvxuRtssRsxRRRRRRvxRRRRRMRMR',
-  'ssssssxuRsssRsxRRtRRRvxRRRtRRRMR',
-  'sssssvxRRtttttsuRRRRRtxuRRRsMmMs',
-  'ssssssxuRttttsuRRRRRRxttRRtsssss',
-  'ssssssxuRtttttsuRRRRRxttRRttssss',
-  'tttsssRxRssstsxssssvxussssssssRR',
-  'tttsssvxussstsxtsssssxssssssssRt',
-  'tttsssRxtssstRussssvxustssssssRt',
-  'RRRtttsxuRRRsRuRRRtsxussRRRsssss',
-  'RRRtttsvxuRRssuRRRsvxsstRRRtssss',
-  'RRRtttssvxuRsssuRRsvxssstRRsssss',
-  'sssttttttxussRuttttvxutRssssssss',
-  'sssttttvxussssRuttvxtttRssssssss',
-  'ssstttttxussstsuttvxtRRtssssssss',
-  'ssssssssvxRRtsutttRtxsssRRRRttss',
-  'ssstssssvxuRtsxttrRvxrssRRRRRRst',
-  'sssssssrxuRRtttrruxxuxssRRRRRRss',
-  'ttttttttxtttsrruuxxrxxurrMmmmMtt',
-  'trrttttrxutrsuuxxttrxtxuMxMMtrrt',
-  'rxxxtrxxxuxuuxxuuturxttMxmmumuuu',
-  'xxxxuuuuxxuxxttttttuuxutttMmuxxu',
-  'xtRtuxrrtxRRrrrRRRRsrxsrmmmtmstr',
-  'tttRtmMMmMxtRRRttttttxRRRRRRRtRR',
-  'RtRttMttmxtttttsssssrxxsRRRRRRRR',
-  'RRRtttmtmMtttttssssrxuusRRRRRtRR',
-  'RRRtttMMxttttttsssssxsusRttRRRRR',
-  'ssssssRRxRRRRRRRRRsrxRsuRRRssstt',
-  'tsssssRRxRRRRtRtRRssrxuRRRRtsstt',
-  'ssssstrxRRRRRRRtRRssrxxRtRRststt',
-  'RRRtttsrxsssRRRtttRRRxusssssssts',
-  'RRRtttsrxsssRRRtttRRRxusstssssss',
-  'RRRtttsrxsssRRRttttRRrxussssssss',
-  'sssttttttxttRRRssssssRxtssssssss',
-  'sssttttttxutRRRssssssRxussssssss',
-  'sssttttttxttRRRsssssrxxtssssssss',
-  'RRtRRRssxssstsstttssrxuRssssssRR',
-  'RRRRRRstrxusssstttsssxuRsssssstR',
-  'RRRRRRssxsssssstttssrxuRssssssRt',
-  'sssRRRrxsRRRtttssstsrxsxsssRRRtt',
-  'sssRRRxssttRtttstssssrxRssstRRtt',
-  'sssRRxRssRRRtttssssssrxttttttRtt',
-  'ssRRRRxRxsssRRRtttmRMmmMssssssRR',
-  'RRxuuuxuxRRRtttssstmtmmttttttttR',
-  'uuxxxrxutuuxtttsssmMmtmMttttttRu',
-  'uxuttrxtuxuxRRttuummRmmmuttuRtux',
-  'tututrxttMMtmmRtuuuuuRxtuRRRxuut',
-  'sssssssssmmsmmuuxxxuxuxuuuxxxxss',
-  'uuussssssmmMtxuxtsstsurxuuuuttss',
-  'uuututttttutsxttttttuttxututtttt',
-  'uuutttttttttsxsttttttttrxuuttutt',
-  'uuutttttttttututttuuuttrxttpntge',
-  'uugepnttttttuuuuuuuuuttxttuqktes',
-  'tteuqktttuuutttuupntturgeuuuuuuu',
-  'uuuuuuttttttpntttqkttuuexttuuuuu',
+  'RRvvtsssrrrrRvuRssssssssrrrrrrrr',
+  'wvrrwvwvwvvvvvwvvvvxvvvvvvvvwvtr',
+  'rrrrrMrrrrvrvvvvrrvxvvvvvvvvrtur',
+  'rtrmmrrmrrrtvvvvrrrxvvvvvvvvrsur',
+  'rsssMmvMsvrrvvvvrrrxuvvvrrrrrtvv',
+  'rsssmvMmmrrtvvvvrrrvxuvvwvvvvvst',
+  'vsstvMvmMrrtvvvvrrrvxuvvssstssst',
+  'vsssvvvvsrrvvvvvrrrvxuvsstssssst',
+  'vrvtvvvvvvwrvtvvsssvxuuvvvvvrrrs',
+  'vvtvttststtrvtvvssssmmmmvvtvrrrs',
+  'rvvvrssrsstrvvvvssssmmmmvvvvrrrt',
+  'rvvvrsursssurtvvssssssmmuvtvvtvs',
+  'vssssuuvvvvvvvvvvvvvvuvvxrrvvvvs',
+  'rtssstwvvvvvssssrrrrrvwuxrtrvvvs',
+  'vsststvvvvvvssssrtrrrrsuxutrvvvs',
+  'rssssuvvvvtvssssrrrrrrsuxurrvvvs',
+  'rvrrttrrrrrrssssvvvvvvtuxuvvrrtt',
+  'rrrssurrrrtrsmssvmmMvvtxuvvvrrvt',
+  'vtsuutrrrrrvMvmmmmmmvtvxuvvvrrrt',
+  'xvvvvvwwvuvrmtmmmrrvvwvvxvuvrrrs',
+  'vrrrttvtrvrrrmmmRRmmRRRvxuvusstu',
+  'vrrrttttrxurrrrrRRRRwvvxwvvuvvvu',
+  'rrrrttttxurrrrrrRRRRtvxuttswtMmv',
+  'rrrrtttvxurrtrrrRRRRRxurttstmMMs',
+  'vrrrrrrvxrrrtttttttttxurRRRRMmRs',
+  'rtrrrtrrxvrrtttttttttvxrRRRRMmms',
+  'rrrrrrrvxurrtttttttttvxrRRRRRRRs',
+  'vrrrrrrvxurrtttttttttvxuRRRRRRRs',
+  'rRtRRRRvxtttttttRRRRRxuRrrtrrrrs',
+  'rRRtRRRrxtttttttRRRvxuRRrrrrrrrs',
+  'rRRRRRRvxuttttttRRvxurRRrrtrrrrt',
+  'rRRRRRRRxuttttstssxssrRRrrrrrrrs',
+  'rvwvuvxtxuuvvuuvtuxutrRRRRRRttts',
+  'vtttvtvwxuMvwmvRvvxxvRRRRRRRtttt',
+  'rtttttvxuttsstsRtvxuwxRRRRRRttts',
+  'rvvvutvxutssRRstttxtRvuRRRRRttts',
+  'wtrrvuvxrrrrrvrrtvxtRRvurrrrttts',
+  'vrrrsurrxurrrrrrtvxtRRRwurrrtttt',
+  'rrrrsurrrxrrrrrrtvxtRRRstrrrtttu',
+  'vrrrsurrrxrrrrrrtvxtRRsMMmsmmuut',
+  'vRRRsxRRvxRRRRRRvxRRRRtmMxuxuRRR',
+  'vRRRRvxRxRRRRRRRxRvtwvvmvmummRRR',
+  'vRRRRttvxvvvvvvvxvtvRRRmmMmxmRRR',
+  'vvvvvwvrxuRRssssxtttRRRRustuRRRR',
+  'vsussmmMMMRRssrxssssttttssturrrr',
+  'vsssssssmMxRssrxssssttttsssurrrr',
+  'rssssssmRMrxssrxssusttttssstvvvw',
+  'rssssssmMRRxsssrxsssttttsvwvttts',
+  'rRRRuturssrxsssssxsssmvvvMwvuRwt',
+  'rRRRtttrssssxsssrxstststttstRRts',
+  'vRRRtttvssurxsssrxsssssttsttRRRs',
+  'rRRRtttrsssssxssrxusssxrttttRvRs',
+  'vssssssrtssstxtrxssssssvtsssttts',
+  'rsssvtsuurtstxttrxssssvssssstttt',
+  'rtssssvtwvvvvwxwxuxsssxvssssttts',
+  'vssvvvsvRRRRtRxRxRvvvuvsssssuvts',
+  'rswRRRRRsssssrxxsssstvussstsRRRt',
+  'vwRRRRRvwssvvvxsxuvvttvussssRRts',
+  'vRuRtRRttsssttrxuststtsussssRRRt',
+  'vvvtRRRsssssssrxxsssttsussssRRRs',
+  'rttvvtsssssssssrxsssRRsxssssssst',
+  'rttttusussssssssxsssRuRvuttttsst',
+  'vtttstssssssssrxrxssRRRttuuxuvtt',
+  'vtttRvussssssssrxxumMRsMussssttx',
+  'rttttsutssssRRRRrxMmMmsussssssss',
+  'vtttttutsstsRRtRsxMMMMsmssssssss',
+  'vvvwwuutssssvvvwvxmmvMvMwvvussss',
+  'rtttsvvvwmMmMmtttrxxsssstttvvuss',
+  'rRRRRvRRRmmrRRtRRRRrxRRRttttsvus',
+  'rRRRRuRRRmMrmmRRRRRxuuRRvvvvwwws',
+  'rRRRRRRRRRRurRRRRRxRtRRRtssssstv',
+  'rRRRRRRRRRRRvRutrxRRRRRRttssRRRs',
+  'rRRussssttttrsssxtttttttssrsttts',
+  'rRRRsusstuttrtssrxutttttssurttts',
+  'rRRRssssttutrusstxtttttttssrtttt',
+  'rtsttttsttssvsttrxttsssssssrstts',
   'xkxxpxxxxxkkqkxxxxxkkxxxkkkxxxkk',
   'xxpppppkkkkkkkppppppqxxkkkkppppq',
   'kpnnnpnqxkxkxppnnnnpqxxkpkxpnnnq',
@@ -157,7 +161,7 @@ const CLIFF_FACE: PixelFrame = [
   'xxxxxqqqqqxxxqqqxxxqqqqqxxxxxxxx',
 ]
 
-/** Walkable grass cap: dark front rim over a thin rock lip. */
+/** Walkable grass cap: dark front rim over a thin grey rock lip. */
 const CLIFF_TOP: PixelFrame = [
   'aaaaaaccccccaaadddbbbbbbaaadddbb',
   'afaaaafgccccaaadddbbbbbbaaadddbb',
@@ -187,13 +191,13 @@ const CLIFF_TOP: PixelFrame = [
   'hghhgehhhhhhhgghhheegehhehhghhhh',
   'oooohohhhohooohhhoggooohohoohoho',
   'xoxxokoooxoxxkooooookxooxoxxoxoo',
-  'vvvwwwvvvvvuvvvwwwwwwwwwuvvvvvww',
-  'rrrRRRrrrrrurrrrrrRRRRRRurrrrrrr',
-  'rrrRRRRRRRRutRRRRRRRRRRRutRrrrRR',
-  'RRRsssRRRsssutsssssssssssutRRRss',
+  'vvvwwwvvuwwwwwwwwuvvvvvvvuvvvvvv',
+  'RRRrrMRRurrrrrrrruRRRRmRrurrrrRR',
+  'sssRRRMRRutRRRRsssutRssmRRutssRR',
+  'sssttttttutttttsssutttttttuttttt',
 ]
 
-/** Loose stones and debris; transparent except at the base. */
+/** Loose grey stones and debris; transparent except at the base. */
 const CLIFF_RUBBLE: PixelFrame = [
   '................................',
   '................................',

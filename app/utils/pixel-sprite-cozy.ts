@@ -16,9 +16,15 @@
  * - `beeSkep`       20x22, a woven straw skep. Alternating light and dark
  *   coil bands wrap a bell-shaped dome, a dark arched entrance opens at the
  *   base, and two single-pixel honey-gold bees hover beside it.
- * - `stoneWall`     32x22, a low grey fieldstone wall segment. Three staggered
- *   courses of rounded blocks in sunlit/mid/shade greys, dark mortar seams,
- *   a wide lighter capstone in the top course, and two moss tufts.
+ * - `stoneWall`     32x22, a low grey fieldstone wall segment for east-west
+ *   runs. Three staggered courses of rounded blocks in sunlit/mid/shade
+ *   greys, dark mortar seams, a wide lighter capstone in the top course, and
+ *   two moss tufts. The left and right edges are edge-neutral (no outline
+ *   columns), so adjacent segments merge into one continuous wall.
+ * - `stoneWallVertical` 22x32, the north-south counterpart. A 16px body with
+ *   the same courses and a capstone line down its left side. The top and
+ *   bottom edges are edge-neutral (no outline rows), so stacked segments
+ *   merge into one continuous vertical wall.
  * - `stonePost`     32x28, a matching gatepost. A 14px square pillar of four
  *   staggered stone courses under a shaped lighter capstone, with one moss
  *   tuft at the base.
@@ -220,30 +226,78 @@ const STONE_PALETTE: PixelPalette = {
   G: '#8fae62', // moss light
 }
 
-/** 32x22 low fieldstone wall: three staggered courses, capstone, moss tufts. */
+/** 32x22 low fieldstone wall: edge-neutral sides, three staggered courses. */
 const STONE_WALL: PixelFrame = [
   '................................',
   '................................',
-  '.oooooooooooooooooooooooooooooo.',
-  '.odgGLLLd.CCCCCCCCCCCC.dLLLLLdo.',
-  '.oLGgmmms.Cmmmmmmmmmms.Lmmmmmso.',
-  '.oLmmmmms.Cmmmmmmmmmms.Lmmmmmso.',
-  '.oLmmmmms.Cmmmmmmmmmms.Lmmmmmso.',
-  '.odsssssd.dssssssssssd.dsssssdo.',
-  '.oddddddddddddddddddddddddddddo.',
-  '.odLLd.dLLLLLLLd.dLLLLLLd.dLLdo.',
-  '.oLmms.Lmmmmmmms.Lmmmmmms.Lmmso.',
-  '.oLmms.Lmmmmmmms.Lmmmmmms.Lmmso.',
-  '.oLmms.Lmmmmmmms.Lmmmmmms.Lmmso.',
-  '.odssd.dsssssssd.dssssssd.dssdo.',
-  '.oddddddddddddddddddddddddddddo.',
-  '.odLLLLLLd.dLLLLLLd.dLLLLLLLLdo.',
-  '.oLmmmmmms.Lmmmmmms.Lmmmmmmmmso.',
-  '.oLmmmmmms.Lmmmmmms.Lmmmmmmmmso.',
-  '.oLmmmmmms.Lmmmmmms.Lmmmmmmmmso.',
-  '.odssssssd.dssssssd.dsssssgGsdo.',
-  '.oddddddddddddddddddddddddGgddo.',
-  '.oooooooooooooooooooooooooooooo.',
+  'oooooooooooooooooooooooooooooooo',
+  'LLLgGdddLLLLLLddCCCCCCCCCCCCddLL',
+  'mmmGgsdLmmmmmmsdCmmmmmmmmmmsdLmm',
+  'mmmmmsdLmmmmmmsdCmmmmmmmmmmsdLmm',
+  'mmmmmsdLmmmmmmsdCmmmmmmmmmmsdLmm',
+  'sssssdddssssssdddssssssssssdddss',
+  'dddddddddddddddddddddddddddddddd',
+  'LdddLLLLLLdddLLLLLLdddLLLLLdddLL',
+  'msdLmmmmmmsdLmmmmmmsdLmmmmmsdLmm',
+  'msdLmmmmmmsdLmmmmmmsdLmmmmmsdLmm',
+  'msdLmmmmmmsdLmmmmmmsdLmmmmmsdLmm',
+  'sdddssssssdddssssssdddsssssdddss',
+  'dddddddddddddddddddddddddddddddd',
+  'LLLdddLLLLLLLLdddLLLLLLdddLLLLLL',
+  'mmmsdLmmmmmmmmsdLmmmmmmsdLmmmmmm',
+  'mmmsdLmmmmmmmmsdLmmmmmmsdLmmmmmm',
+  'mmmsdLmmmmmmmmsdLmmmmmmsdLmmmmmm',
+  'sssdddssssssssdddssssssdddgGssss',
+  'ddddddddddddddddddddddddddGgdddd',
+  'oooooooooooooooooooooooooooooooo',
+]
+
+/* ------------------------------------------------------------------ */
+/* Stone wall, vertical                                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 22x32 north-south wall built for vertical stacking.
+ *
+ * Eight four-row courses fill the full tile height, so consecutive wall
+ * tiles meet edge to edge with no grass gap. The top row is a sunlit course
+ * and the bottom row is its mortar seam, which is exactly what the next
+ * tile's top row expects: the stack reads as one continuous wall. The
+ * capstone runs down the left edge and the moss stays on the shaded right.
+ */
+const STONE_WALL_VERTICAL: PixelFrame = [
+  '..oCCsdLLLLLLLLLLLdo..',
+  '..oCCsLmmmmsdLmmmmso..',
+  '..oCCsdssssdddssssdo..',
+  '..oddddddddddddddddo..',
+  '..oCCsdLLLLLLLLLLLdo..',
+  '..oCCsLmmmmmmmmmmmso..',
+  '..oCCsdsssssssssssdo..',
+  '..oddddddddddddddddo..',
+  '..oCCsdLLLLLLLLLLLdo..',
+  '..oCCsLmmmsdLmmmmmso..',
+  '..oCCsdsssdddsssssdo..',
+  '..oddddddddddddddddo..',
+  '..oCCsdLLLLLLLLLLLdo..',
+  '..oCCsLmmmmmmsdLmmso..',
+  '..oCCsdsssssdddsssdo..',
+  '..oddddddddddddddddo..',
+  '..oCCsdLLLLLLLLLLLdo..',
+  '..oCCsLmsdLmmmmmmmso..',
+  '..oCCsdssdddssssssdo..',
+  '..oddddddddddddddddo..',
+  '..oCCsdLLLLLLLLLLLdo..',
+  '..oCCsLmmmmmsdLmmmso..',
+  '..oCCsdsssssdddsssdo..',
+  '..oddddddddddddddddo..',
+  '..oCCsdLLLLLLLLLLLdo..',
+  '..oCCsLmmsdLmmmmmmso..',
+  '..oCCsdssdddssssssdo..',
+  '..oddddddddddddddddo..',
+  '..oCCsdLLLLLLLLLLLdo..',
+  '..oCCsLgGmmmmmmmmmso..',
+  '..oCCsdGgsssssssssdo..',
+  '..oddddddddddddddddo..',
 ]
 
 /* ------------------------------------------------------------------ */
@@ -292,6 +346,7 @@ export const cozySprites: {
   mailbox: PixelSprite
   beeSkep: PixelSprite
   stoneWall: PixelSprite
+  stoneWallVertical: PixelSprite
   stonePost: PixelSprite
 } = {
   bench: { palette: BENCH_PALETTE, frames: [BENCH], frameMs: 1000 },
@@ -299,5 +354,6 @@ export const cozySprites: {
   mailbox: { palette: MAILBOX_PALETTE, frames: [MAILBOX], frameMs: 1000 },
   beeSkep: { palette: BEE_SKEP_PALETTE, frames: [BEE_SKEP], frameMs: 1000 },
   stoneWall: { palette: STONE_PALETTE, frames: [STONE_WALL], frameMs: 1000 },
+  stoneWallVertical: { palette: STONE_PALETTE, frames: [STONE_WALL_VERTICAL], frameMs: 1000 },
   stonePost: { palette: STONE_PALETTE, frames: [STONE_POST], frameMs: 1000 },
 }

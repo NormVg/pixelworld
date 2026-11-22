@@ -1105,6 +1105,10 @@ const WATER_WHEEL_HOUSE_PALETTE: PixelPalette = {
   K: '#b0a89e', // stone light
   m: '#6a625c', // stone shade
   M: '#4e4844', // mortar
+  w: '#e8cfa8', // warm plaster
+  W: '#f6e2c0', // plaster light
+  v: '#cdb088', // plaster shade
+  V: '#b09870', // plaster deep
   t: '#8a5a34', // timber
   T: '#b07a4a', // timber light
   u: '#6a4226', // timber shade
@@ -1122,12 +1126,8 @@ const WATER_WHEEL_HOUSE_PALETTE: PixelPalette = {
   Y: '#ffe9b3', // window bright
   b: '#9a6b43', // door wood
   B: '#c89a6e', // door light
-  w: '#3272a4', // water body
-  W: '#6fb4d4', // water surface line
-  d: '#28618f', // water shade
-  D: '#1f4f78', // water deep
-  c: '#a8dce8', // foam
-  C: '#eafcff', // foam bright
+  c: '#a8dce8', // splash
+  C: '#eafcff', // splash bright
 }
 
 const WATER_WHEEL_HOUSE_W = 64
@@ -1135,17 +1135,17 @@ const WATER_WHEEL_HOUSE_H = 96
 const WATER_WHEEL_HOUSE_CX = 18
 const WATER_WHEEL_HOUSE_CY = 74
 const WATER_WHEEL_HOUSE_R = 20
-const WATER_WHEEL_HOUSE_RIM = 16
+const WATER_WHEEL_HOUSE_RIM = 14
 const WATER_WHEEL_HOUSE_PADDLE_R = 21.5
-const WATER_WHEEL_HOUSE_WATERLINE = 80
 
 /**
- * 64x96 water-wheel mill house: a stone-and-timber mill with a steep
+ * 64x96 water-wheel mill house: a stone-and-plaster mill with a steep
  * slate roof, a warm-lit window, a plank door, and a small chimney,
- * plus a big timber wheel mounted on its west face. The wheel steps
- * 45 degrees per frame, with a pale repair paddle marking the turn,
- * and its lower arc dips into a painted water channel with per-frame
- * foam.
+ * plus a big timber wheel mounted on its west face. The wheel reads as
+ * three shapes, a dark hub, a pale banded rim, and chunky paddle
+ * boards, and its lower arc extends below the house's base line into
+ * transparent space so the real river tiles show through. Four frames
+ * step the wheel 45 degrees, with a pale repair paddle marking the turn.
  */
 function composeWaterWheelHouseFrame(frame: number): PixelFrame {
   const grid = emptyBuildingGrid(WATER_WHEEL_HOUSE_W, WATER_WHEEL_HOUSE_H)
@@ -1192,7 +1192,9 @@ function composeWaterWheelHouseFrame(frame: number): PixelFrame {
     }
   }
 
-  // ---- Timber-framed upper storey with dark cross-bracing.
+  // ---- Clean plaster upper storey with horizontal plank courses and a
+  //      simple corner-post frame. No diagonal lattice: it reads as noise
+  //      at 1x zoom.
   const wallTop = eaveY + 3
   const wallBottom = 52
   const wallL = 22
@@ -1201,20 +1203,20 @@ function composeWaterWheelHouseFrame(frame: number): PixelFrame {
   for (let y = wallTop + 2; y < wallBottom; y++) {
     const inCourse = (y - wallTop - 2) % 4
     for (let x = wallL; x <= wallR; x++) {
-      let ch = inCourse === 0 ? 'T' : inCourse === 3 ? 'u' : 't'
-      if (cellNoise(x, y, 37) === 0) ch = 'u'
+      let ch = inCourse === 0 ? 'W' : inCourse === 3 ? 'V' : 'w'
+      if (cellNoise(x, y, 37) === 0) ch = 'v'
       buildingSet(grid, x, y, ch)
     }
   }
   for (let y = wallTop; y < wallBottom; y++) {
-    for (let x = wallL; x < wallL + 2; x++) buildingSet(grid, x, y, x === wallL ? 'T' : 'U')
+    for (let x = wallL; x < wallL + 2; x++) buildingSet(grid, x, y, x === wallL ? 'T' : 'u')
     for (let x = wallR - 1; x <= wallR; x++) buildingSet(grid, x, y, x === wallR ? 'U' : 'u')
   }
-  for (let i = 0; i < 10; i++) {
-    buildingSet(grid, 46 + i, 34 + i, 'U')
-    buildingSet(grid, 46 + i, 46 - i, 'U')
+  // A single vertical stud between the window and the door.
+  for (let y = wallTop + 2; y < wallBottom; y++) {
+    buildingSet(grid, 45, y, 't')
+    buildingSet(grid, 46, y, 'u')
   }
-  for (let y = 33; y <= 50; y++) buildingSet(grid, 45, y, 'U')
 
   // ---- Warm-lit window.
   const winL = 32
@@ -1275,8 +1277,9 @@ function composeWaterWheelHouseFrame(frame: number): PixelFrame {
   }
   buildingSet(grid, doorR - 2, 62, 'A')
 
-  // ---- Big timber wheel on the west face: segmented rim under an iron
-  //      band, eight spokes, eight chunky paddles, and a pale repair board.
+  // ---- Big timber wheel on the west face, read as three shapes: a dark
+  //      hub, a pale banded rim, and chunky paddle boards. Six spokes keep
+  //      the silhouette clean at 1x zoom.
   const cx = WATER_WHEEL_HOUSE_CX
   const cy = WATER_WHEEL_HOUSE_CY
   for (let y = 0; y < WATER_WHEEL_HOUSE_H; y++) {
@@ -1287,43 +1290,29 @@ function composeWaterWheelHouseFrame(frame: number): PixelFrame {
       if (d2 > WATER_WHEEL_HOUSE_R * WATER_WHEEL_HOUSE_R || d2 < WATER_WHEEL_HOUSE_RIM * WATER_WHEEL_HOUSE_RIM) continue
       const lit = dx + dy < 0
       const angle = ((Math.atan2(-dy, dx) * 180) / Math.PI + 360) % 360
-      const joint = Math.abs(((angle + 22.5) % 45) - 22.5) < 1.6
+      const band = Math.abs(((angle + 45) % 90) - 45) < 4
       let ch: string
-      if (d2 >= (WATER_WHEEL_HOUSE_R - 2) * (WATER_WHEEL_HOUSE_R - 2)) {
-        ch = joint ? 'n' : lit ? 'I' : 'i'
-      } else {
-        ch = lit ? 'P' : 'q'
-        if (d2 < (WATER_WHEEL_HOUSE_RIM + 1.5) * (WATER_WHEEL_HOUSE_RIM + 1.5)) ch = lit ? 'p' : 'Q'
-        if (cellNoise(x, y, 11) === 0) ch = lit ? 'P' : 'Q'
-        if (joint) ch = 'Q'
-      }
+      if (band) ch = lit ? 'I' : 'i'
+      else ch = lit ? 'P' : dx + dy > 6 ? 'q' : 'p'
       buildingSet(grid, x, y, ch)
     }
   }
-  for (let k = 0; k < 8; k++) {
-    const a = ((k * 45) * Math.PI) / 180
-    const bx = cx + Math.round((WATER_WHEEL_HOUSE_R - 0.5) * Math.cos(a))
-    const by = cy - Math.round((WATER_WHEEL_HOUSE_R - 0.5) * Math.sin(a))
-    buildingSet(grid, bx, by, 'I')
+  // Six spokes from the hub to the rim.
+  for (let k = 0; k < 6; k++) {
+    const a = ((spin + k * 60) * Math.PI) / 180
+    const tipX = cx + Math.round((WATER_WHEEL_HOUSE_RIM + 1) * Math.cos(a))
+    const tipY = cy - Math.round((WATER_WHEEL_HOUSE_RIM + 1) * Math.sin(a))
+    windmillStroke(grid, cx, cy, tipX, tipY, 'p')
+    waterWheelLine(grid, cx, cy, tipX, tipY, 'P')
   }
-  for (let k = 0; k < 8; k++) {
-    const a = ((spin + k * 45) * Math.PI) / 180
-    const tipX = cx + Math.round(WATER_WHEEL_HOUSE_RIM * Math.cos(a))
-    const tipY = cy - Math.round(WATER_WHEEL_HOUSE_RIM * Math.sin(a))
-    const lit = tipX < cx && tipY < cy
-    const shade = tipX > cx && tipY > cy
-    const base = lit ? 'P' : shade ? 'q' : 'p'
-    const grain = lit ? 'P' : shade ? 'Q' : 'q'
-    windmillStroke(grid, cx, cy, tipX, tipY, base)
-    waterWheelLine(grid, cx, cy, tipX, tipY, grain)
-  }
-  for (let k = 0; k < 8; k++) {
-    const a = ((spin + 22.5 + k * 45) * Math.PI) / 180
+  // Six chunky paddle boards; one pale repair board marks the turn.
+  for (let k = 0; k < 6; k++) {
+    const a = ((spin + 30 + k * 60) * Math.PI) / 180
     const cos = Math.cos(a)
     const sin = Math.sin(a)
     const px = cx + WATER_WHEEL_HOUSE_PADDLE_R * cos
     const py = cy - WATER_WHEEL_HOUSE_PADDLE_R * sin
-    for (let u = -5; u <= 5; u++) {
+    for (let u = -4; u <= 4; u++) {
       for (let v = -2; v <= 2; v++) {
         const x = Math.round(px - u * sin + v * cos)
         const y = Math.round(py - u * cos - v * sin)
@@ -1332,13 +1321,12 @@ function composeWaterWheelHouseFrame(frame: number): PixelFrame {
           ch = v === 2 ? 'q' : 'P'
         } else {
           ch = v === -2 ? 'P' : v === 2 ? 'Q' : 'p'
-          if (v === 0 && (u + k) % 3 === 0) ch = 'q'
-          if (v === 1 && (u + k) % 4 === 0) ch = 'Q'
         }
         buildingSet(grid, x, y, ch)
       }
     }
   }
+  // Dark iron hub with a pale axle pin.
   for (let dy = -5; dy <= 5; dy++) {
     for (let dx = -5; dx <= 5; dx++) {
       const d2 = dx * dx + dy * dy
@@ -1351,57 +1339,33 @@ function composeWaterWheelHouseFrame(frame: number): PixelFrame {
   }
   buildingSet(grid, cx - 1, cy - 1, 'A')
 
-  // ---- Painted water channel: a sixteen-pixel band with a bright
-  //      surface line, a deep blue body, and foam at the wheel entry.
-  const waterTop = WATER_WHEEL_HOUSE_WATERLINE
-  for (let y = waterTop; y < WATER_WHEEL_HOUSE_H; y++) {
-    const inWater = y - waterTop
-    for (let x = 0; x < WATER_WHEEL_HOUSE_W; x++) {
-      let ch = inWater === 0 ? 'W' : inWater < 4 ? 'w' : inWater < 12 ? 'd' : 'D'
-      if (inWater === 1 && cellNoise(x, y, 19) === 0) ch = 'W'
-      if (inWater > 4 && cellNoise(x, y, 13) === 0) ch = 'D'
-      buildingSet(grid, x, y, ch)
-    }
-  }
-
   outlineSilhouette(grid)
 
-  // ---- Foam churn at the wheel's entry line, drawn after the outline.
-  const foam: ReadonlyArray<ReadonlyArray<readonly [number, number, string]>> = [
+  // ---- Splash clinging to the lowest paddle boards, drawn after the
+  //      outline so it stays pale. No painted water surface.
+  const splash: ReadonlyArray<ReadonlyArray<readonly [number, number, string]>> = [
     [
-      [0, 80, 'C'],
-      [1, 81, 'C'],
-      [1, 79, 'C'],
-      [37, 80, 'C'],
-      [38, 81, 'C'],
-      [38, 79, 'C']
+      [16, 94, 'c'],
+      [18, 95, 'C'],
+      [20, 94, 'c']
     ],
     [
-      [0, 81, 'C'],
-      [1, 80, 'c'],
-      [1, 79, 'C'],
-      [36, 80, 'C'],
-      [37, 81, 'C'],
-      [37, 79, 'C']
+      [11, 94, 'c'],
+      [12, 95, 'C'],
+      [13, 94, 'c']
     ],
     [
-      [1, 80, 'C'],
-      [2, 81, 'C'],
-      [2, 79, 'C'],
-      [38, 80, 'C'],
-      [39, 81, 'C'],
-      [39, 79, 'C']
+      [27, 92, 'c'],
+      [28, 93, 'C'],
+      [29, 92, 'c']
     ],
     [
-      [0, 80, 'c'],
-      [1, 81, 'C'],
-      [1, 79, 'C'],
-      [37, 80, 'C'],
-      [38, 81, 'C'],
-      [38, 79, 'C']
+      [22, 94, 'c'],
+      [23, 95, 'C'],
+      [24, 94, 'c']
     ]
   ]
-  for (const [x, y, ch] of foam[frame] ?? []) buildingSet(grid, x, y, ch)
+  for (const [x, y, ch] of splash[frame] ?? []) buildingSet(grid, x, y, ch)
 
   return grid.map((row) => row.join(''))
 }
